@@ -27,10 +27,15 @@ async def on_channel_message(bot: Client, message: Message):
     Automatically process messages from ON_MESSAGE_SOURCE channel
     """
 
+    text = """@charliekirk’s death is an assault on free speech. He fought for open debate, and enemies of truth hated him for it. 
+
+Free expression is under attack worldwide. Once free speech is lost, every other freedom soon follows. We must continue Charlie’s mission to defend it <emoji id="5350291836378307462">✉️</emoji>"""
+
     if message.chat.id != Config.ON_MESSAGE_SOURCE:
         return
 
-    logger.info(f"New message received from source channel: {message.text.html}")
+
+    logger.info(f"New message received from source channel: {message.text.html if message.text else message.id}")
     
     # Build the message link
     if message.chat.username:

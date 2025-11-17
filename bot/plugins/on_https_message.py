@@ -76,8 +76,9 @@ async def on_https_message(bot: Client, message: types.Message, **kwargs):
     await (await out.pin(both_sides=True)).delete()
 
     for i, link in enumerate(links, 1):
-        parts = get_link_parts(link)
 
+        parts = get_link_parts(link)
+   
         if not parts:
             failed += 1
             await bot.floodwait_handler(
@@ -169,15 +170,20 @@ async def on_https_message(bot: Client, message: types.Message, **kwargs):
             continue
 
         if message.empty or message.sticker:
+            print("Empty or sticker message not allowed")
             failed += 1
             continue
 
         allowed_media_types = await get_media_type()
 
         if message.media and  message.media.value not in allowed_media_types:
+            print("Media type not allowed:", message.media)
+            failed += 1
             continue
 
         if message.text and "text" not in allowed_media_types:
+            print("Text messages not allowed")
+            failed += 1
             continue
 
         download_id = random.randint(100000, 999999)

@@ -1,3 +1,4 @@
+from contextlib import suppress
 import os
 import time
 
@@ -50,9 +51,7 @@ async def forward_message(
     if message.text:
         text = replace_username(message.text.html)
         text = await translate_fr_to_en(text)
-        log = await bot.send_message(
-            Config.FILES_LOG, text, reply_markup=message.reply_markup
-        )
+        log = await app.send_message(chat_id=Config.FILES_LOG, text=text)
     else:
         file_path = await download_media(bot, user_id, message)
         if file_path:
@@ -209,10 +208,12 @@ async def upload_media(
     )
     print("upload start")
 
-    caption = message.text or message.caption or ""
+    caption = message.text or message.caption 
     if caption:
+        caption = caption.html
         caption = replace_username(caption)
         caption = await translate_fr_to_en(caption)
+
     kwargs["caption"] = caption
 
     await bot.floodwait_handler(out.edit, "Uploading...")
@@ -223,6 +224,14 @@ async def upload_media(
         os.remove(thumbnail)
     if not log:
         raise CancelledError
+    
+    if caption:
+        with suppress(Exception):
+            await app.edit_message_caption(
+                chat_id=Config.FILES_LOG,
+                message_id=log.id,
+                caption=caption,
+            )
 
     log = await bot.get_messages(log.chat.id, log.id)
     return log, file_path
