@@ -29,10 +29,10 @@ async def settings(bot: Client, query: CallbackQuery):
     markup = InlineKeyboardMarkup(
         [
             [InlineKeyboardButton("👤 My Account", callback_data="connected_account")],
-            [
-                InlineKeyboardButton("📢 Channels", callback_data="channels"),
-            ],
-            [InlineKeyboardButton("📋 Media Types", callback_data="mediatype_main")],
+            # [
+            #     InlineKeyboardButton("📢 Channels", callback_data="channels"),
+            # ],
+            # [InlineKeyboardButton("📋 Media Types", callback_data="mediatype_main")],
             [InlineKeyboardButton("🔙 Back", callback_data="start")],
         ]
     )

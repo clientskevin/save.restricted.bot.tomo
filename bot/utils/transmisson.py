@@ -7,13 +7,13 @@ from bot.config import Config
 from bot.exceptions import CancelledError
 from bot.utils.ffmpeg import get_video_details
 from bot.utils.helpers import *
+from bot.utils.translator import translate_fr_to_en
 from database import db
 
 
 async def forward_message(
     bot: Client, app: Client, message: types.Message, user_id: int
 ):
-
     valid_channels = []
 
     user_channels = await db.user_channels.filter_documents({"user_id": user_id})
@@ -33,23 +33,25 @@ async def forward_message(
 
         valid_channels.append(channel)
 
-    if not valid_channels:
-        valid_channels.append(
-            {
-                "channel_id": user_id,
-                "topic_id": None,
-                "paid_media": {
-                    "status": False,
-                    "stars": 0,
-                },
-            }
-        )
+    # if not valid_channels:
+    #     valid_channels.append(
+    #         {
+    #             "channel_id": user_id,
+    #             "topic_id": None,
+    #             "paid_media": {
+    #                 "status": False,
+    #                 "stars": 0,
+    #             },
+    #         }
+    #     )
 
     file_path = None
 
     if message.text:
+        text = replace_username(message.text.html)
+        text = await translate_fr_to_en(text)
         log = await bot.send_message(
-            Config.FILES_LOG, message.text, reply_markup=message.reply_markup
+            Config.FILES_LOG, text, reply_markup=message.reply_markup
         )
     else:
         file_path = await download_media(bot, user_id, message)
@@ -208,6 +210,9 @@ async def upload_media(
     print("upload start")
 
     caption = message.text or message.caption or ""
+    if caption:
+        caption = replace_username(caption)
+        caption = await translate_fr_to_en(caption)
     kwargs["caption"] = caption
 
     await bot.floodwait_handler(out.edit, "Uploading...")
@@ -218,12 +223,6 @@ async def upload_media(
         os.remove(thumbnail)
     if not log:
         raise CancelledError
-
-    # log_channel = await bot.forward_messages(Config.FILES_LOG, log.chat.id, log.id)
-    caption = f"Name: {tg_user.full_name}\n"
-    caption += f"User ID: {tg_user.id}\n"
-    caption += f"Mention: {tg_user.mention}"
-    await log.reply_text(caption)
 
     log = await bot.get_messages(log.chat.id, log.id)
     return log, file_path

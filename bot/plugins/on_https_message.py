@@ -18,15 +18,8 @@ from database import db
 from bot.exceptions import CancelledError
 
 
-CANCEL_MARKUP = lambda download_id: types.InlineKeyboardMarkup(
-    [
-        [
-            types.InlineKeyboardButton(
-                "Cancel Transfer", callback_data=f"cancel {download_id}"
-            )
-        ]
-    ]
-)
+def CANCEL_MARKUP(download_id):
+    return types.InlineKeyboardMarkup([[types.InlineKeyboardButton("Cancel Transfer", callback_data=f"cancel {download_id}")]])
 
 
 @Client.on_message(
@@ -57,7 +50,9 @@ async def on_https_message(bot: Client, message: types.Message, **kwargs):
     app = await get_user_client(user_id)
 
     if not app:
-        return await bot.floodwait_handler(bot.send_message, user_id,
+        return await bot.floodwait_handler(
+            bot.send_message,
+            user_id,
             "You need to login first to use this bot.",
             reply_markup=types.InlineKeyboardMarkup(
                 [
@@ -75,11 +70,12 @@ async def on_https_message(bot: Client, message: types.Message, **kwargs):
         return await message.reply_text("No links found.")
 
     success, failed = 0, 0
-    out = await bot.floodwait_handler(bot.send_message, user_id, f"Processing {len(links)} links...")
+    out = await bot.floodwait_handler(
+        bot.send_message, user_id, f"Processing {len(links)} links..."
+    )
     await (await out.pin(both_sides=True)).delete()
 
     for i, link in enumerate(links, 1):
-
         parts = get_link_parts(link)
 
         if not parts:
@@ -143,16 +139,17 @@ async def on_https_message(bot: Client, message: types.Message, **kwargs):
         is_bot = chat.type == enums.ChatType.BOT
         is_user = chat.type == enums.ChatType.PRIVATE
 
-        if not chat.has_protected_content and not is_bot and not is_user:
-            failed += 1
-            await bot.floodwait_handler(
-                bot.send_message,
-                user_id,
-                f"This chat doesn't have protected content - **{chat.title}**",
-            )
-            if is_batch:
-                break
-            continue
+        # if not is_bot and not is_user:
+        # # if not chat.has_protected_content and not is_bot and not is_user:
+        #     failed += 1
+        #     await bot.floodwait_handler(
+        #         bot.send_message,
+        #         user_id,
+        #         f"This chat doesn't have protected content - **{chat.title}**",
+        #     )
+        #     if is_batch:
+        #         break
+        #     continue
 
         if topic_id:
             message_ids = topic_id
@@ -175,12 +172,9 @@ async def on_https_message(bot: Client, message: types.Message, **kwargs):
             failed += 1
             continue
 
-        if not message.media:
-            continue
-
         allowed_media_types = await get_media_type()
 
-        if message.media.value not in allowed_media_types:
+        if message.media and  message.media.value not in allowed_media_types:
             continue
 
         if message.text and "text" not in allowed_media_types:

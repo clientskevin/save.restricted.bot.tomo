@@ -1,7 +1,7 @@
 from pyrogram import Client, filters, enums
 from pyrogram.types import Message, InlineKeyboardMarkup, InlineKeyboardButton
 from bot.config import Config
-from bot.plugins.on_message import on_https_message
+from bot.plugins.on_https_message import on_https_message
 from bot.utils import get_link_parts, get_user_client, is_input_cancelled
 from database import db
 import logging

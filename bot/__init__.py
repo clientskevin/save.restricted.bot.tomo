@@ -9,7 +9,7 @@ import asyncio
 import logging
 from pyrogram import Client, raw, types, errors
 import logging.config
-from bot.config import Config
+from bot.config import Config, ContextVariables
 from typing import Iterable, List, Union, Any
 from bot.utils import add_admin, start_webserver, set_commands
 import pyromod
@@ -31,9 +31,7 @@ class User(Client):
             api_id=Config.API_ID,
             api_hash=Config.API_HASH,
             session_string=session_string,
-            no_updates=True,
-            skip_updates=True,
-            in_memory=False,
+            plugins=dict(root="user/plugins"),
             **kwargs,
         )
 
@@ -99,6 +97,8 @@ class Bot(Client):
 
         await asyncio.gather(*[c.start() for c in clients_to_start])
         logging.info(f"Started {len(clients_to_start)} users")
+
+        ContextVariables.BOT = self
         
         if Config.WEB_SERVER:
             await start_webserver()

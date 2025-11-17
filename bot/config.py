@@ -1,11 +1,12 @@
 import os
 from dotenv import load_dotenv
 from pyrogram.enums import MessageMediaType
-
+from pyrogram.client import Client
 from bot.enums import CaptionVariables
+from typing_extensions import Annotated
 
 if os.path.exists("config.env"):
-    load_dotenv("config.env")
+    load_dotenv(".env")
 else:
     load_dotenv()
 
@@ -25,11 +26,12 @@ class Config(object):
     BOT_TOKEN = os.environ.get("BOT_TOKEN")
     DATABASE_NAME = os.environ.get("DATABASE_NAME", "tg_bot")
     DATABASE_URL = os.environ.get("DATABASE_URL", None)
-    OWNER_ID = int(os.environ.get("OWNER_ID"))
+    OWNER_ID = os.environ.get("OWNER_ID")
 
     # LOG CHANNELS
-    USER_INFO_LOG = int(os.environ.get("USER_INFO_LOG", 0))
     FILES_LOG = int(os.environ.get("FILES_LOG", 0))
+    ON_MESSAGE_SOURCE: Annotated[int, "Messages posted on this channels are instantly forwarded to dest"] = int(os.environ.get("ON_MESSAGE_SOURCE", 0))
+
 
     # Optional
     WEB_SERVER = is_enabled(os.environ.get("WEB_SERVER", "False"), False)
@@ -46,6 +48,12 @@ class Config(object):
         MessageMediaType.DOCUMENT.value: "📄 Document",
         "text": "📄 Text",
     }
+
+    if OWNER_ID.isdigit():
+        OWNER_ID = int(OWNER_ID)
+
+class ContextVariables(object):
+    BOT: Client = None
 
 class Script(object):
 

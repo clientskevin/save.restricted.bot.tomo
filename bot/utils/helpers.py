@@ -1,17 +1,16 @@
 import functools
 import logging
 import math
-import os
 import random
 import time
-from pyrogram import Client, types, StopTransmission
-from pyrogram.types import InputMediaPhoto, InputMediaVideo
+from pyrogram import types, StopTransmission
+from pyrogram.client import Client
 from bot.enums import TransferStatus
 from bot.config import Config, Script
 from bot.utils.ffmpeg import create_thumbnail
 from database import db
 from aiohttp import web
-
+import re
 
 async def get_thumbnail(file_path):
     thumbnail = await create_thumbnail(file_path)
@@ -22,10 +21,10 @@ async def set_commands(app: Client):
     commands = [
         types.BotCommand("start", "🚀 Get started with the bot"),
         types.BotCommand("help", "💡 Need assistance? Find help here"),
-        types.BotCommand("settings", "⚙️ Manage your settings"),
+        # types.BotCommand("settings", "⚙️ Manage your settings"),
         types.BotCommand("batch", "📦 Save an entire channel"),
         types.BotCommand("account", "👤 Manage your Telegram account"),
-        types.BotCommand("channels", "📢 Manage your channels like a pro"),
+        # types.BotCommand("channels", "📢 Manage your channels like a pro"),
         types.BotCommand("cancel", "❌ Cancel an ongoing transfer"),
     ]
     await app.set_bot_commands(commands)
@@ -33,7 +32,7 @@ async def set_commands(app: Client):
 
 async def get_admins():
     config = await db.config.get_config("ADMINS")
-    return config["value"]
+    return config["value"] if config else []
 
 
 async def add_admin(user_id):
@@ -93,28 +92,26 @@ async def add_user(bot: Client, user: types.User):
 
     await db.users.create(user_id)
 
-    text = "New user!\n\n"
-    text += f"Name: {user.first_name}\n"
-    text += f"ID: `{user_id}`\n"
-    text += f"Mention: {user.mention}\n"
-
-    await bot.send_message(Config.USER_INFO_LOG, text)
-
     return True
 
 
-async def download_thumbnail(app: Client, thumbnail_id: int):
+async def download_thumbnail(app: Client, thumbnail_id: str):
     try:
         thumbnail = await app.download_media(thumbnail_id)
     except Exception as e:
         print(e)
-        os.remove(thumbnail)
         thumbnail = None
     return thumbnail
 
 
 async def progress_for_pyrogram(
-    current, total, start, file_message, edit_func, download_id, mode="Uploading"
+    current,
+    total,
+    start,
+    file_message: types.Message,
+    edit_func,
+    download_id,
+    mode="Uploading",
 ):
     if is_transfer_cancelled(download_id):
         raise StopTransmission
@@ -122,7 +119,6 @@ async def progress_for_pyrogram(
     if total < 50000000:
         return
 
-    file_message: types.Message = file_message
     progress_data = [
         ("■", "□"),
         ("★", "❍"),
@@ -182,7 +178,7 @@ async def progress_for_pyrogram(
             print(e)
 
 
-async def get_user_client(user_id) -> Client:
+async def get_user_client(user_id) -> Client | None:
     user = await db.users.read(user_id)
     if not user:
         return
@@ -199,7 +195,6 @@ async def is_input_cancelled(message: types.Message):
 
 
 async def get_upload_function(message: types.Message, app: Client, file_path: str):
-
     media = message.document or message.video or message.photo or message.audio
     if not media:
         return None
@@ -279,19 +274,19 @@ def get_link_parts(link: str):
 
     if link.startswith("tg://"):
         # Handle tg:// links
-        if not "openmessage?" in link:
+        if "openmessage?" not in link:
             return
 
         try:
             params = dict(param.split("=") for param in link.split("?")[1].split("&"))
-            chat_id = params.get("user_id")
+            chat_id = params.get("user_id", "")
             if chat_id.isdigit():
                 chat_id = int(chat_id)
             else:
                 chat_id = chat_id.replace("@", "")
-            message_id = int(params.get("message_id"))
+            message_id = int(params.get("message_id", ""))
             return chat_id, message_id, topic_id
-        except:
+        except Exception:
             return
 
     if not link.startswith("http"):
@@ -387,3 +382,11 @@ def parse_duration(duration: str) -> int:
         return int(duration[:-1]) * 3600
     else:
         return int(duration)
+
+
+def replace_username(text: str) -> str:
+    # use re.sub to match case insensitively
+    source = "@finstrasupport"
+    target = "@finstraofficialsupport"
+
+    return re.sub(re.escape(source), target, text, flags=re.IGNORECASE)
