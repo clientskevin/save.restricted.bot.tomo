@@ -11,7 +11,7 @@ from pyrogram import Client, raw, types, errors
 import logging.config
 from bot.config import Config, ContextVariables
 from typing import Iterable, List, Union, Any
-from bot.utils import add_admin, start_webserver, set_commands
+from bot.utils import add_admin, start_webserver, set_commands, ping_server
 import pyromod
 from database import db
 
@@ -102,6 +102,7 @@ class Bot(Client):
         
         if Config.WEB_SERVER:
             await start_webserver()
+            await asyncio.create_task(ping_server())
 
     async def stop(self, *args):
         await asyncio.gather(*[self.suppress(c.stop) for c in Config.CLIENTS.values()])

@@ -35,6 +35,7 @@ class Config(object):
 
     # Optional
     WEB_SERVER = is_enabled(os.environ.get("WEB_SERVER", "False"), False)
+    WEB_URL = os.environ.get("WEB_URL")
     SLEEP_TIME = int(os.environ.get("SLEEP_TIME", 60))
 
     # Operator

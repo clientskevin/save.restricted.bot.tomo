@@ -1,8 +1,10 @@
+import asyncio
 import functools
 import logging
 import math
 import random
 import time
+import aiohttp
 from pyrogram import types, StopTransmission
 from pyrogram.client import Client
 from bot.enums import TransferStatus
@@ -11,6 +13,7 @@ from bot.utils.ffmpeg import create_thumbnail
 from database import db
 from aiohttp import web
 import re
+
 
 async def get_thumbnail(file_path):
     thumbnail = await create_thumbnail(file_path)
@@ -61,6 +64,23 @@ async def remove_admin(user_id):
     return False
 
 
+async def ping_server():
+    while True:
+        if Config.WEB_URL:
+            try:
+                async with aiohttp.ClientSession() as session:
+                    async with session.get(Config.WEB_URL) as response:
+                        if response.status == 200:
+                            logging.info("Pinged web server successfully.")
+                        else:
+                            logging.warning(
+                                f"Ping to web server returned status code {response.status}."
+                            )
+            except Exception as e:
+                logging.error(f"Error pinging web server: {e}")
+        await asyncio.sleep(300)  # Ping every 5 minutes
+
+
 async def start_webserver():
     routes = web.RouteTableDef()
 
@@ -80,7 +100,7 @@ async def start_webserver():
     await app.setup()
     await web.TCPSite(app, "0.0.0.0", 8000).start()
     logging.info("Web server started")
-
+    
 
 async def add_user(bot: Client, user: types.User):
     user_id = user.id
