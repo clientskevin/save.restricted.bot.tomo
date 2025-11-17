@@ -78,7 +78,7 @@ async def ping_server():
                             )
             except Exception as e:
                 logging.error(f"Error pinging web server: {e}")
-        await asyncio.sleep(300)  # Ping every 5 minutes
+        await asyncio.sleep(120)  # Ping every 5 minutes
 
 
 async def start_webserver():
