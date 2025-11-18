@@ -21,13 +21,14 @@ logger = logging.getLogger(__name__)
 
 @Client.on_message(
     filters.channel
-    & filters.incoming
-    & filters.chat(Config.ON_MESSAGE_SOURCE)
 )
 async def on_channel_message(bot: Client, message: Message):
     """
     Automatically process messages from ON_MESSAGE_SOURCE channel
     """
+
+    if message.chat.id != Config.ON_MESSAGE_SOURCE:
+        return  # Ignore messages from other channels
 
     logger.info(f"New message received from source channel: {message.id}")
     
