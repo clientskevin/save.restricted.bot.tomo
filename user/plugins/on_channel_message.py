@@ -19,24 +19,19 @@ import logging
 logger = logging.getLogger(__name__)
 
 
-@Client.on_message(
-
-)
+@Client.on_message()
 async def on_channel_message(bot: Client, message: Message):
     """
     Automatically process messages from ON_MESSAGE_SOURCE channel
     """
 
-    text = """@charliekirk’s death is an assault on free speech. He fought for open debate, and enemies of truth hated him for it. 
-
-Free expression is under attack worldwide. Once free speech is lost, every other freedom soon follows. We must continue Charlie’s mission to defend it <emoji id="5350291836378307462">✉️</emoji>"""
-
     if message.chat.id != Config.ON_MESSAGE_SOURCE:
         return
 
+    logger.info(
+        f"New message received from source channel: {message.text.html if message.text else message.id}"
+    )
 
-    logger.info(f"New message received from source channel: {message.text.html if message.text else message.id}")
-    
     # Build the message link
     if message.chat.username:
         # Public channel
@@ -45,16 +40,16 @@ Free expression is under attack worldwide. Once free speech is lost, every other
         # Private channel
         chat_id = str(message.chat.id).replace("-100", "")
         link = f"https://t.me/c/{chat_id}/{message.id}"
-    
+
     logger.info(f"Extracted link: {link}")
-    
+
     # Create a fake user message to pass to the handler
     # We'll use the OWNER_ID as the user who requested this
     user_message = message
     user_message.text = link
-    user_message.from_user = type('obj', (object,), {'id': Config.OWNER_ID})()
+    user_message.from_user = type("obj", (object,), {"id": Config.OWNER_ID})()
     user_message._client = ContextVariables.BOT
-    user_message.chat = type('obj', (object,), {'id': Config.OWNER_ID})()
-    
+    user_message.chat = type("obj", (object,), {"id": Config.OWNER_ID})()
+
     # Call the HTTPS handler to process the link
     await on_https_message(ContextVariables.BOT, user_message, is_batch=False)

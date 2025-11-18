@@ -6,7 +6,7 @@ from bot.enums import CaptionVariables
 from typing_extensions import Annotated
 
 if os.path.exists("config.env"):
-    load_dotenv(".env")
+    load_dotenv("config.env")
 else:
     load_dotenv()
 

@@ -46,7 +46,7 @@ async def on_https_message(bot: Client, message: types.Message, **kwargs):
             return await message.reply_text(
                 "You have a transfer in progress. Please wait for it to complete."
             )
-
+    print(user_id)
     app = await get_user_client(user_id)
 
     if not app:
