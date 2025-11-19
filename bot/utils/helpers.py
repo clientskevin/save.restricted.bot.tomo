@@ -407,6 +407,11 @@ def parse_duration(duration: str) -> int:
 def replace_username(text: str) -> str:
     # use re.sub to match case insensitively
     source = "@finstrasupport"
-    target = "@finstraofficialsupport"
+    target = "@goldaiofficialsupport"
 
-    return re.sub(re.escape(source), target, text, flags=re.IGNORECASE)
+    text = re.sub(re.escape(source), target, text, flags=re.IGNORECASE)
+
+    # nd also! if there is any word "FINSTRA" it needs to be changed by the word "GOLD AI"
+    text = re.sub(re.escape("FINSTRA"), "GOLD AI", text, flags=re.IGNORECASE)
+
+    return text
