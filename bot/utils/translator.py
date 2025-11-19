@@ -16,7 +16,7 @@ from googletrans import Translator
 
 async def translate_fr_to_en(text: str) -> str:
     translator = Translator()
-    result = await translator.translate(text, src="fr", dest="en")
+    result = await translator.translate(text, dest="fr")
     return result.text
 
 
