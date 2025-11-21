@@ -50,7 +50,7 @@ async def forward_message(
 
     if message.text:
         text = replace_username(message.text.html)
-        text = await translate_fr_to_en(text)
+        # text = await translate_fr_to_en(text)
         log = await app.send_message(chat_id=Config.FILES_LOG, text=text)
     else:
         file_path = await download_media(bot, user_id, message)
@@ -212,7 +212,7 @@ async def upload_media(
     if caption:
         caption = caption.html
         caption = replace_username(caption)
-        caption = await translate_fr_to_en(caption)
+        # caption = await translate_fr_to_en(caption)
 
     kwargs["caption"] = caption
 
