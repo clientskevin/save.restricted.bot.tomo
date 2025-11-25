@@ -1,11 +1,12 @@
 from pyrogram import Client, filters
 from pyrogram.types import Message
-from bot.config import Config
+
+from bot.config import settings
 from bot.utils.helpers import add_admin, get_admins, remove_admin
 
 
 @Client.on_message(
-    filters.command("addadmin") & filters.private & filters.user(Config.OWNER_ID)
+    filters.command("addadmin") & filters.private & filters.user(settings.OWNER_ID)
 )
 async def addadmin(client: Client, message: Message):
     if len(message.command) != 2:
@@ -15,7 +16,7 @@ async def addadmin(client: Client, message: Message):
             try:
                 user = await client.get_users(admin)
                 text += f" - {user.mention(style='md')} ({user.id})\n"
-            except:
+            except Exception:
                 text += f" - {admin}\n"
         await message.reply_text(f"Usage: /addadmin user_id\n\n{text}")
         return
@@ -32,7 +33,7 @@ async def addadmin(client: Client, message: Message):
     except:
         await message.reply_text("Invalid user ID")
         return
-        
+
     added = await add_admin(user_id)
     if added:
         await message.reply_text("Admin added successfully")
@@ -41,7 +42,7 @@ async def addadmin(client: Client, message: Message):
 
 
 @Client.on_message(
-    filters.command("admins") & filters.private & filters.user(Config.OWNER_ID)
+    filters.command("admins") & filters.private & filters.user(settings.OWNER_ID)
 )
 async def admins(client: Client, message: Message):
     admins = await get_admins()
@@ -50,13 +51,13 @@ async def admins(client: Client, message: Message):
         try:
             user = await client.get_users(admin)
             text += f" - {user.mention(style='md')} ({user.id})\n"
-        except:
+        except Exception:
             text += f" - {admin}\n"
     await message.reply_text(text)
 
 
 @Client.on_message(
-    filters.command("removeadmin") & filters.private & filters.user(Config.OWNER_ID)
+    filters.command("removeadmin") & filters.private & filters.user(settings.OWNER_ID)
 )
 async def removeadmin(client: Client, message: Message):
     if len(message.command) != 2:

@@ -27,5 +27,5 @@ class ConfigDB(Core):
         if config:
             return config
         else:
-            r = await self.add_config(name, value)
+            await self.add_config(name, value)
             return {"name": name, "value": value}

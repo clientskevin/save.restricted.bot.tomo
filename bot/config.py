@@ -1,68 +1,102 @@
-import os
-from dotenv import load_dotenv
-from pyrogram.enums import MessageMediaType
+from pathlib import Path
+from typing import Any, Dict, Optional
+
+import yaml
+from pydantic import Field, field_validator, model_validator
+from pydantic_settings import BaseSettings, SettingsConfigDict
 from pyrogram.client import Client
+from pyrogram.enums import MessageMediaType
+
 from bot.enums import CaptionVariables
-from typing_extensions import Annotated
-
-if os.path.exists("config.env"):
-    load_dotenv("config.env")
-else:
-    load_dotenv()
 
 
-def is_enabled(value, default):
-    if value.lower() in ["true", "yes", "1", "enable", "y"]:
-        return True
-    elif value.lower() in ["false", "no", "0", "disable", "n"]:
+class Config(BaseSettings):
+    """
+    Application configuration using Pydantic BaseSettings.
+    Loads from environment variables and .env files.
+    """
+
+    model_config = SettingsConfigDict(
+        env_file=(".env", "config.env"),
+        env_file_encoding="utf-8",
+        case_sensitive=False,
+        extra="ignore",
+    )
+
+    # Required settings
+    API_ID: int
+    API_HASH: str
+    BOT_TOKEN: str
+
+    # Database settings
+    DATABASE_NAME: str = "tg_bot"
+    DATABASE_URL: Optional[str] = None
+    OWNER_ID: int
+
+    # Optional settings
+    WEB_SERVER: bool = False
+    WEB_URL: Optional[str] = None
+    SLEEP_TIME: int = 10
+
+    # Config file path for forward configuration
+    CONFIG_FILE: str = Field(
+        default="dev_config.yaml", description="Path to YAML config file"
+    )
+
+    # Runtime attributes (not from env)
+    CLIENTS: Dict[Any, Any] = Field(default_factory=dict, exclude=True)
+    TRANSFERS: Dict[Any, Any] = Field(default_factory=dict, exclude=True)
+    FORWARD_CONFIG: Dict[int, Dict[str, Any]] = Field(
+        default_factory=dict, exclude=True
+    )
+    ON_MESSAGE_SOURCE: list = Field(default_factory=list, exclude=True)
+
+    ALL_MEDIA_TYPES: Dict[str, str] = Field(
+        default_factory=lambda: {
+            MessageMediaType.PHOTO.value: "📷 Photo",
+            MessageMediaType.VIDEO.value: "🎥 Video",
+            MessageMediaType.AUDIO.value: "🎵 Audio",
+            MessageMediaType.DOCUMENT.value: "📄 Document",
+            "text": "📄 Text",
+        },
+        exclude=True,
+    )
+
+    @field_validator("WEB_SERVER", mode="before")
+    @classmethod
+    def parse_bool(cls, v: Any) -> bool:
+        """Parse boolean values from string environment variables."""
+        if isinstance(v, bool):
+            return v
+        if isinstance(v, str):
+            return v.lower() in ["true", "yes", "1", "enable", "y"]
         return False
-    else:
-        return default
+
+    @model_validator(mode="after")
+    def load_forward_config(self) -> "Config":
+        """Load forward configuration from YAML file."""
+        config_path = Path(self.CONFIG_FILE)
+        with open(config_path, "r", encoding="utf-8") as f:
+            yaml_data = yaml.safe_load(f)
+        self.FORWARD_CONFIG = {int(k): v for k, v in yaml_data["forwards"].items()}
+        self.ON_MESSAGE_SOURCE = list(self.FORWARD_CONFIG.keys())
+        return self
 
 
-class Config(object):
-    API_ID = int(os.environ.get("API_ID"))
-    API_HASH = os.environ.get("API_HASH")
-    BOT_TOKEN = os.environ.get("BOT_TOKEN")
-    DATABASE_NAME = os.environ.get("DATABASE_NAME", "tg_bot")
-    DATABASE_URL = os.environ.get("DATABASE_URL", None)
-    OWNER_ID = os.environ.get("OWNER_ID")
+# Create a singleton instance
+settings = Config()
 
-    # LOG CHANNELS
-    FILES_LOG = int(os.environ.get("FILES_LOG", 0))
-    ON_MESSAGE_SOURCE: Annotated[int, "Messages posted on this channels are instantly forwarded to dest"] = int(os.environ.get("ON_MESSAGE_SOURCE", 0))
-
-
-    # Optional
-    WEB_SERVER = is_enabled(os.environ.get("WEB_SERVER", "False"), False)
-    WEB_URL = os.environ.get("WEB_URL")
-    SLEEP_TIME = int(os.environ.get("SLEEP_TIME", 60))
-
-    # Operator
-    CLIENTS = {}
-    TRANSFERS = {}
-
-    ALL_MEDIA_TYPES = {
-        MessageMediaType.PHOTO.value: "📷 Photo",
-        MessageMediaType.VIDEO.value: "🎥 Video", 
-        MessageMediaType.AUDIO.value: "🎵 Audio",
-        MessageMediaType.DOCUMENT.value: "📄 Document",
-        "text": "📄 Text",
-    }
-
-    if OWNER_ID.isdigit():
-        OWNER_ID = int(OWNER_ID)
 
 class ContextVariables(object):
-    BOT: Client = None
+    BOT: Client | None = None
+
 
 class Script(object):
-
     START_MESSAGE = """💾 **Welcome to the Ultimate Content Saver Bot on Telegram!** 💾
 
 **Steps to Get Started:**
 1. **Log in** to your account by sending /account along with your Phone number. 🔑  
-2. **Send me any message link**, and I’ll safely store it for you! 🗂️  
+2. **Send me any message link**, and I'll safely store it for you! 🗂️  
 3. **Explore my advanced features** by tapping the **Settings** button below. ⚙️"""
 
     RESTART_MESSAGE = "🔄 ** Bot is restarting, please re download your in progress files after few seconds **"

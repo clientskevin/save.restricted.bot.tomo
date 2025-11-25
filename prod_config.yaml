@@ -1,0 +1,16 @@
+# Forward Configuration
+# Format: source_channel_id -> destination_channel_id with language and text replacements
+
+forwards:
+  -1002635367492:
+    dest: -1003484865062
+    lang: fr
+    replace:
+      FINSTRA: GOLD AI
+
+  -1002477064021:
+    dest: -1003490790931
+    lang: fr
+    replace:
+      "@finstrasupport": "@goldaiofficialsupport"
+      FINSTRA: GOLD AI

@@ -3,16 +3,18 @@ import functools
 import logging
 import math
 import random
+import re
 import time
+
 import aiohttp
-from pyrogram import types, StopTransmission
+from aiohttp import web
+from pyrogram import StopTransmission, types
 from pyrogram.client import Client
+
+from bot.config import Script, settings
 from bot.enums import TransferStatus
-from bot.config import Config, Script
 from bot.utils.ffmpeg import create_thumbnail
 from database import db
-from aiohttp import web
-import re
 
 
 async def get_thumbnail(file_path):
@@ -66,10 +68,10 @@ async def remove_admin(user_id):
 
 async def ping_server():
     while True:
-        if Config.WEB_URL:
+        if settings.WEB_URL:
             try:
                 async with aiohttp.ClientSession() as session:
-                    async with session.get(Config.WEB_URL) as response:
+                    async with session.get(settings.WEB_URL) as response:
                         if response.status == 200:
                             logging.info("Pinged web server successfully.")
                         else:
@@ -100,7 +102,7 @@ async def start_webserver():
     await app.setup()
     await web.TCPSite(app, "0.0.0.0", 8000).start()
     logging.info("Web server started")
-    
+
 
 async def add_user(bot: Client, user: types.User):
     user_id = user.id
@@ -204,7 +206,7 @@ async def get_user_client(user_id) -> Client | None:
         return
 
     session_id = user["session"].get("id")
-    client = Config.CLIENTS.get(session_id)
+    client = settings.CLIENTS.get(session_id)
     return client
 
 
@@ -252,10 +254,10 @@ def get_extension(message: types.Message):
 
 def is_transfer_cancelled(download_id):
     if (
-        Config.TRANSFERS.get(download_id, {}).get("status")
+        settings.TRANSFERS.get(download_id, {}).get("status")
         == TransferStatus.CANCELLED.value
     ):
-        Config.TRANSFERS.pop(download_id)
+        settings.TRANSFERS.pop(download_id)
         return True
 
 
@@ -404,14 +406,37 @@ def parse_duration(duration: str) -> int:
         return int(duration)
 
 
-def replace_username(text: str) -> str:
-    # use re.sub to match case insensitively
-    source = "@finstrasupport"
-    target = "@goldaiofficialsupport"
-
-    text = re.sub(re.escape(source), target, text, flags=re.IGNORECASE)
-
-    # nd also! if there is any word "FINSTRA" it needs to be changed by the word "GOLD AI"
-    text = re.sub(re.escape("FINSTRA"), "GOLD AI", text, flags=re.IGNORECASE)
-
+def replace_username(source: int, text: str) -> str:
+    replace = settings.FORWARD_CONFIG.get(source, {}).get("replace")
+    print(replace)
+    if not replace:
+        return text
+    for key, value in replace.items():
+        text = re.sub(re.escape(key), value, text, flags=re.IGNORECASE)
     return text
+
+
+def preserve_username(source: int, text: str) -> str:
+    # replace all the source text with placeholder which trnslate will not translate
+    replace = settings.FORWARD_CONFIG.get(source, {}).get("replace")
+    if not replace:
+        return text
+    for key, value in replace.items():
+        placeholder = f"__{key}__"
+        text = re.sub(re.escape(key), placeholder, text, flags=re.IGNORECASE)
+    return text
+
+
+def restore_username(source: int, text: str) -> str:
+    # replace all the placeholder with source text
+    replace = settings.FORWARD_CONFIG.get(source, {}).get("replace")
+    if not replace:
+        return text
+    for key, value in replace.items():
+        placeholder = f"__{key}__"
+        text = re.sub(re.escape(placeholder), value, text, flags=re.IGNORECASE)
+    return text
+
+
+def get_destination(source: int) -> int | None:
+    return settings.FORWARD_CONFIG.get(source, {}).get("dest")

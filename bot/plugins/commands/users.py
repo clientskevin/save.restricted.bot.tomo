@@ -1,7 +1,7 @@
 from pyrogram import Client, filters, types
+
 from bot.utils import check_admin
 from database import db
-from bot.config import Config
 
 
 @Client.on_message(filters.command("users", prefixes="/") & filters.incoming)
@@ -63,4 +63,4 @@ async def users(client, message):
         )
 
     else:
-        await message.reply_text(f"**Total Users:**\n\nNo Users")
+        await message.reply_text("**Total Users:**\n\nNo Users")

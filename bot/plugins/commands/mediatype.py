@@ -1,19 +1,22 @@
 from pyrogram import Client, filters
-from pyrogram.types import Message, InlineKeyboardButton, InlineKeyboardMarkup
 from pyrogram.enums import MessageMediaType
-from bot.config import Config
+from pyrogram.types import InlineKeyboardButton, InlineKeyboardMarkup, Message
+
+from bot.config import settings
 from bot.utils.media_type import get_media_type
 
 
-@Client.on_message(filters.command("mediatype") & filters.private & filters.user(Config.OWNER_ID))
+@Client.on_message(
+    filters.command("mediatype") & filters.private & filters.user(settings.OWNER_ID)
+)
 async def mediatype_command(bot: Client, message: Message):
     """Command to manage media types that the bot will save"""
     current_media_types = await get_media_type()
-    
+
     # Available media types
     all_media_types = {
         MessageMediaType.PHOTO.value: "📷 Photo",
-        MessageMediaType.VIDEO.value: "🎥 Video", 
+        MessageMediaType.VIDEO.value: "🎥 Video",
         MessageMediaType.AUDIO.value: "🎵 Audio",
         MessageMediaType.DOCUMENT.value: "📄 Document",
         MessageMediaType.ANIMATION.value: "🎞️ Animation",
@@ -28,26 +31,26 @@ async def mediatype_command(bot: Client, message: Message):
         MessageMediaType.DICE.value: "🎲 Dice",
         MessageMediaType.WEB_PAGE.value: "🌐 Web Page",
     }
-    
+
     text = "📋 **Media Type Management**\n\n"
     text += "Current enabled media types:\n"
-    
+
     if current_media_types:
         for media_type in current_media_types:
             if media_type in all_media_types:
                 text += f"• {all_media_types[media_type]}\n"
     else:
         text += "• None selected\n"
-    
+
     text += f"\nTotal: {len(current_media_types)} types enabled"
-    
+
     buttons = [
-        [InlineKeyboardButton("⚙️ Manage Media Types", callback_data="mediatype_select")],
-        [InlineKeyboardButton("🔙 Back", callback_data="settings")]
+        [
+            InlineKeyboardButton(
+                "⚙️ Manage Media Types", callback_data="mediatype_select"
+            )
+        ],
+        [InlineKeyboardButton("🔙 Back", callback_data="settings")],
     ]
-    
-    await bot.reply(
-        message,
-        text,
-        reply_markup=InlineKeyboardMarkup(buttons)
-    )
+
+    await bot.reply(message, text, reply_markup=InlineKeyboardMarkup(buttons))

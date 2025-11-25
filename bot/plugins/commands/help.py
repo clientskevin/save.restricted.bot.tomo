@@ -1,10 +1,11 @@
 from pyrogram import Client, filters
 from pyrogram.types import (
-    Message,
     CallbackQuery,
-    InlineKeyboardMarkup,
     InlineKeyboardButton,
+    InlineKeyboardMarkup,
+    Message,
 )
+
 from bot.config import Script
 
 

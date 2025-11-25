@@ -1,12 +1,13 @@
+from bson import ObjectId
 from pyrogram import Client, filters
-from database import db
 from pyrogram.types import (
     CallbackQuery,
     InlineKeyboardButton,
     InlineKeyboardMarkup,
     Message,
 )
-from bson import ObjectId
+
+from database import db
 
 
 @Client.on_callback_query(filters.regex(r"^channels$"))
@@ -15,8 +16,6 @@ async def channels(bot, message: CallbackQuery | Message):
     user_channels = await db.user_channels.filter_documents(
         {"user_id": message.from_user.id}
     )
-
-    key = ["user_channels"]
 
     text = "📺 **Your Channels**\n"
 
@@ -54,13 +53,13 @@ async def channels(bot, message: CallbackQuery | Message):
 async def add_channel(bot: Client, message: CallbackQuery):
     try:
         ask = await message.message.chat.ask(
-            f"📥 Send me the channel ID you want to add or forward a message from the channel.\n\n"
-            f"💬 Send me the group ID or username directly to use a group.\n\n"
-            f"Example:\n"
-            f"Channel: `@ChannelUsername` or `-1001234567890`\n"
-            f"Group: `@GroupUsername` or `-1001234567890`\n\n"
-            f"Note: For topic groups, you'll need to provide the topic ID separately.\n\n"
-            f"/cancel to cancel",
+            "📥 Send me the channel ID you want to add or forward a message from the channel.\n\n"
+            "💬 Send me the group ID or username directly to use a group.\n\n"
+            "Example:\n"
+            "Channel: `@ChannelUsername` or `-1001234567890`\n"
+            "Group: `@GroupUsername` or `-1001234567890`\n\n"
+            "Note: For topic groups, you'll need to provide the topic ID separately.\n\n"
+            "/cancel to cancel",
         )
     except Exception as e:
         return await message.message.reply_text(
@@ -98,7 +97,7 @@ async def add_channel(bot: Client, message: CallbackQuery):
 
     try:
         channel = await bot.get_chat(channel_id)
-    except Exception as e:
+    except Exception:
         return await ask.reply(
             "⚠️ Make sure the channel ID is correct and the bot is an admin in the channel",
             reply_markup=InlineKeyboardMarkup(
@@ -111,7 +110,7 @@ async def add_channel(bot: Client, message: CallbackQuery):
     if channel.is_forum:
         try:
             ask = await message.message.chat.ask(
-                f"🗂️ If it's a forum, send me the topic ID of the Topic\n\n/skip to skip\n/cancel to cancel",
+                "🗂️ If it's a forum, send me the topic ID of the Topic\n\n/skip to skip\n/cancel to cancel",
             )
         except Exception as e:
             return await message.message.reply_text(
@@ -158,7 +157,7 @@ async def view_channel(_, message: CallbackQuery):
     _id = ObjectId(message.data.split()[1])
     channel = await db.user_channels.filter_document({"_id": ObjectId(_id)})
 
-    text = f"**Channel Details**\n\n"
+    text = "**Channel Details**\n\n"
     text += f"📌 Title: {channel['title']}\n"
     text += f"🔢 Channel ID: `{channel['channel_id']}`\n"
     if channel["topic_id"]:
@@ -223,7 +222,6 @@ async def confirm_delete(_, message: CallbackQuery):
 
 @Client.on_callback_query(filters.regex(r"^toggle_channel"))
 async def toggle_channel(bot, message: CallbackQuery):
-
     _id = message.data.split()[1]
     channel = await db.user_channels.filter_document({"_id": ObjectId(_id)})
     await db.user_channels.update(ObjectId(_id), {"status": not channel["status"]})
@@ -235,8 +233,7 @@ async def toggle_paid_media(bot, message: CallbackQuery):
     _id = message.data.split()[1]
     channel = await db.user_channels.filter_document({"_id": ObjectId(_id)})
     await db.user_channels.update(
-        ObjectId(_id), 
-        {"paid_media.status": not channel["paid_media"]["status"]}
+        ObjectId(_id), {"paid_media.status": not channel["paid_media"]["status"]}
     )
     await view_channel(bot, message)
 
@@ -245,7 +242,7 @@ async def toggle_paid_media(bot, message: CallbackQuery):
 async def edit_stars(bot, message: CallbackQuery):
     _id = message.data.split()[1]
     channel = await db.user_channels.filter_document({"_id": ObjectId(_id)})
-    
+
     try:
         ask = await message.message.chat.ask(
             f"Enter the number of stars required for paid media (0-100):\n"
@@ -272,7 +269,7 @@ async def edit_stars(bot, message: CallbackQuery):
         stars = int(ask.text)
         if not 0 <= stars <= 10000:
             raise ValueError("Stars must be between 0 and 10,000")
-    except ValueError as e:
+    except ValueError:
         return await ask.reply(
             "⚠️ Invalid number of stars. Please enter a number between 0 and 100.",
             reply_markup=InlineKeyboardMarkup(
@@ -280,11 +277,8 @@ async def edit_stars(bot, message: CallbackQuery):
             ),
         )
 
-    await db.user_channels.update(
-        ObjectId(_id), 
-        {"paid_media.stars": stars}
-    )
-    
+    await db.user_channels.update(ObjectId(_id), {"paid_media.stars": stars})
+
     return await message.message.reply_text(
         f"✅ Stars updated successfully to {stars}",
         reply_markup=InlineKeyboardMarkup(

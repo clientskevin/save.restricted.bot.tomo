@@ -1,6 +1,7 @@
 from pyrogram import Client, filters
 from pyrogram.types import CallbackQuery, Message
-from bot.config import Config
+
+from bot.config import settings
 from bot.enums import TransferStatus
 from bot.utils import update_transfer
 
@@ -11,7 +12,7 @@ async def cancel_transfer(bot: Client, query: CallbackQuery | Message):
     if isinstance(query, Message):
         transfers = {
             download_id: transfer
-            for download_id, transfer in Config.TRANSFERS.items()
+            for download_id, transfer in settings.TRANSFERS.items()
             if transfer["user_id"] == query.from_user.id
         }
         download_id = list(transfers.keys())
@@ -26,7 +27,7 @@ async def cancel_transfer(bot: Client, query: CallbackQuery | Message):
         return await func("❌ No transfer found.", **kwargs)
 
     for d_id in download_id:
-        transfer = Config.TRANSFERS.get(d_id)
+        transfer = settings.TRANSFERS.get(d_id)
         if not transfer:
             continue
 

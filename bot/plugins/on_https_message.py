@@ -1,25 +1,35 @@
 import asyncio
 import random
 import traceback
-from pyrogram import Client, filters, types, errors, enums
-from bot.config import Config
+
+from pyrogram import Client, errors, filters, types
+
+from bot.config import settings
 from bot.enums import TransferStatus
+from bot.exceptions import CancelledError
 from bot.utils import (
-    get_link_parts,
-    is_valid_link,
-    get_user_client,
-    forward_message,
-    is_transfer_cancelled,
     add_transfer_to_queue,
-    remove_transfer_from_queue,
+    forward_message,
+    get_link_parts,
     get_media_type,
+    get_user_client,
+    is_transfer_cancelled,
+    is_valid_link,
+    remove_transfer_from_queue,
 )
 from database import db
-from bot.exceptions import CancelledError
 
 
 def CANCEL_MARKUP(download_id):
-    return types.InlineKeyboardMarkup([[types.InlineKeyboardButton("Cancel Transfer", callback_data=f"cancel {download_id}")]])
+    return types.InlineKeyboardMarkup(
+        [
+            [
+                types.InlineKeyboardButton(
+                    "Cancel Transfer", callback_data=f"cancel {download_id}"
+                )
+            ]
+        ]
+    )
 
 
 @Client.on_message(
@@ -27,7 +37,7 @@ def CANCEL_MARKUP(download_id):
     & filters.private
     & filters.incoming
     & (filters.regex(r"^https?://") | filters.regex(r"^tg://"))
-    & filters.user(Config.OWNER_ID)
+    & filters.user(settings.OWNER_ID)
 )
 async def on_https_message(bot: Client, message: types.Message, **kwargs):
     user_message = message
@@ -38,7 +48,7 @@ async def on_https_message(bot: Client, message: types.Message, **kwargs):
 
     user_id = message.from_user.id
 
-    for download_id, transfer in Config.TRANSFERS.items():
+    for download_id, transfer in settings.TRANSFERS.items():
         if (
             transfer["user_id"] == user_id
             and transfer["status"] == TransferStatus.IN_PROGRESS.value
@@ -46,7 +56,7 @@ async def on_https_message(bot: Client, message: types.Message, **kwargs):
             return await message.reply_text(
                 "You have a transfer in progress. Please wait for it to complete."
             )
-    print(user_id)
+
     app = await get_user_client(user_id)
 
     if not app:
@@ -76,9 +86,8 @@ async def on_https_message(bot: Client, message: types.Message, **kwargs):
     await (await out.pin(both_sides=True)).delete()
 
     for i, link in enumerate(links, 1):
-
         parts = get_link_parts(link)
-   
+
         if not parts:
             failed += 1
             await bot.floodwait_handler(
@@ -137,21 +146,6 @@ async def on_https_message(bot: Client, message: types.Message, **kwargs):
                 break
             continue
 
-        is_bot = chat.type == enums.ChatType.BOT
-        is_user = chat.type == enums.ChatType.PRIVATE
-
-        # if not is_bot and not is_user:
-        # # if not chat.has_protected_content and not is_bot and not is_user:
-        #     failed += 1
-        #     await bot.floodwait_handler(
-        #         bot.send_message,
-        #         user_id,
-        #         f"This chat doesn't have protected content - **{chat.title}**",
-        #     )
-        #     if is_batch:
-        #         break
-        #     continue
-
         if topic_id:
             message_ids = topic_id
         else:
@@ -176,7 +170,7 @@ async def on_https_message(bot: Client, message: types.Message, **kwargs):
 
         allowed_media_types = await get_media_type()
 
-        if message.media and  message.media.value not in allowed_media_types:
+        if message.media and message.media.value not in allowed_media_types:
             print("Media type not allowed:", message.media)
             failed += 1
             continue
@@ -210,7 +204,7 @@ async def on_https_message(bot: Client, message: types.Message, **kwargs):
         )
 
         try:
-            res = await forward_message(bot, app, message, user_id)
+            await forward_message(bot, app, message, user_id)
         except CancelledError:
             await remove_transfer_from_queue(download_id)
             break
@@ -227,7 +221,7 @@ async def on_https_message(bot: Client, message: types.Message, **kwargs):
         await remove_transfer_from_queue(download_id)
         success += 1
 
-        await asyncio.sleep(Config.SLEEP_TIME)
+        await asyncio.sleep(settings.SLEEP_TIME)
 
     await out.delete()
     await bot.floodwait_handler(

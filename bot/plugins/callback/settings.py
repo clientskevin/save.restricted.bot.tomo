@@ -1,7 +1,8 @@
 from pyrogram import Client, filters
-from tabulate import tabulate
-from database import db
 from pyrogram.types import CallbackQuery, InlineKeyboardButton, InlineKeyboardMarkup
+from tabulate import tabulate
+
+from database import db
 
 
 @Client.on_callback_query(filters.regex(r"^settings"))
@@ -16,7 +17,9 @@ async def settings(bot: Client, query: CallbackQuery):
     )
 
     session_username = (
-        f'@{user["session"]["username"]}' if user["session"]["username"] else "No Username``"
+        f'@{user["session"]["username"]}'
+        if user["session"]["username"]
+        else "No Username``"
     )
 
     text += f"┌─ User: {query.from_user.mention}\n"
@@ -24,7 +27,7 @@ async def settings(bot: Client, query: CallbackQuery):
     text += f"├─ User ID: `{query.from_user.id}`\n"
     text += f"└─ Linked Channels: {user_channels_count}\n"
 
-    text += f"You can customize the way your files are uploaded by using the following settings.\n\n"
+    text += "You can customize the way your files are uploaded by using the following settings.\n\n"
 
     markup = InlineKeyboardMarkup(
         [

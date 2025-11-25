@@ -1,20 +1,22 @@
-from pyrogram.types import Message
-from pyrogram import Client, filters
 from asyncio.exceptions import TimeoutError
+
+from pyrogram import Client, filters
+from pyrogram.errors import (
+    PasswordHashInvalid,
+    PhoneCodeExpired,
+    PhoneCodeInvalid,
+    PhoneNumberInvalid,
+    SessionPasswordNeeded,
+)
 from pyrogram.types import (
-    InlineKeyboardMarkup,
     InlineKeyboardButton,
+    InlineKeyboardMarkup,
+    KeyboardButton,
+    Message,
     ReplyKeyboardMarkup,
     ReplyKeyboardRemove,
-    KeyboardButton,
 )
-from pyrogram.errors import (
-    PhoneNumberInvalid,
-    PhoneCodeInvalid,
-    PhoneCodeExpired,
-    SessionPasswordNeeded,
-    PasswordHashInvalid,
-)
+
 from bot import User
 from database import db
 
@@ -33,14 +35,13 @@ class Data:
 
 
 async def generate_session(bot: Client, msg: Message):
-
     user_id = msg.from_user.id
 
     api_id = bot.api_id
     api_hash = bot.api_hash
 
     t = "📲 Now please send your Phone number along with the country code. \nExample: `+19876543210`"
-    t += f"\n\nNote: **Use the same number as the account you are now using.**"
+    t += "\n\nNote: **Use the same number as the account you are now using.**"
     t += "\n\n/cancel to cancel ❌"
 
     phone_number_msg: Message = await bot.ask(

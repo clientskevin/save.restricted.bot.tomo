@@ -10,11 +10,13 @@ Description: Automatically saves messages from specified source channel
 __author__ = "Maria Kevin"
 __version__ = "0.1.0"
 
-from pyrogram import Client, filters
-from pyrogram.types import Message
-from bot.config import Config, ContextVariables
-from bot.plugins.on_https_message import on_https_message
 import logging
+
+from pyrogram import Client
+from pyrogram.types import Message
+
+from bot.config import ContextVariables, settings
+from bot.plugins.on_https_message import on_https_message
 
 logger = logging.getLogger(__name__)
 
@@ -25,12 +27,8 @@ async def on_channel_message(bot: Client, message: Message):
     Automatically process messages from ON_MESSAGE_SOURCE channel
     """
 
-    if message.chat.id != Config.ON_MESSAGE_SOURCE:
+    if message.chat.id not in settings.ON_MESSAGE_SOURCE:
         return
-
-    logger.info(
-        f"New message received from source channel: {message.text.html if message.text else message.id}"
-    )
 
     # Build the message link
     if message.chat.username:
@@ -41,15 +39,13 @@ async def on_channel_message(bot: Client, message: Message):
         chat_id = str(message.chat.id).replace("-100", "")
         link = f"https://t.me/c/{chat_id}/{message.id}"
 
-    logger.info(f"Extracted link: {link}")
-
     # Create a fake user message to pass to the handler
     # We'll use the OWNER_ID as the user who requested this
     user_message = message
     user_message.text = link
-    user_message.from_user = type("obj", (object,), {"id": Config.OWNER_ID})()
+    user_message.from_user = type("obj", (object,), {"id": settings.OWNER_ID})()
     user_message._client = ContextVariables.BOT
-    user_message.chat = type("obj", (object,), {"id": Config.OWNER_ID})()
+    user_message.chat = type("obj", (object,), {"id": settings.OWNER_ID})()
 
     # Call the HTTPS handler to process the link
     await on_https_message(ContextVariables.BOT, user_message, is_batch=False)

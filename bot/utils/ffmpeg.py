@@ -1,7 +1,8 @@
 import asyncio
+import datetime
 import os
 import random
-import datetime
+
 import ffmpeg
 
 
@@ -14,8 +15,10 @@ async def asyncio_command_exec(command_to_exec):
     stdout, stderr = await process.communicate()
     return stdout, stderr
 
+
 async def sync_to_async(func, *args, **kwargs):
     return await asyncio.to_thread(func, *args, **kwargs)
+
 
 async def get_video_details(video_path):
     """Gets video information like width, height, and duration.
@@ -28,7 +31,7 @@ async def get_video_details(video_path):
     """
 
     try:
-        #video_info = ffmpeg.probe(video_path)
+        # video_info = ffmpeg.probe(video_path)
         video_info = await sync_to_async(ffmpeg.probe, video_path)
     except ffmpeg.Error as e:
         print(e.stderr.decode())
@@ -44,6 +47,7 @@ async def get_video_details(video_path):
             duration = str(duration)
             return width, height, int(duration.split(".")[0])
     return 0, 0, 0
+
 
 async def create_thumbnail(inputpath):
     """Creates a thumbnail for a video file."""
@@ -144,9 +148,7 @@ async def change_subtitle_tag_title(
     command = []
 
     for index, title in subtitle_titles.items():
-        command.extend(
-            [f"-metadata:s:s:{index}", f'title={title}']
-        )
+        command.extend([f"-metadata:s:s:{index}", f"title={title}"])
 
     if return_command:
         return command
@@ -182,9 +184,7 @@ async def change_audio_tag_title(
     command = []
 
     for index, title in audio_titles.items():
-        command.extend(
-            [f"-metadata:s:a:{index}", f'title={title}']
-        )
+        command.extend([f"-metadata:s:a:{index}", f"title={title}"])
 
     if return_command:
         return command
@@ -220,9 +220,7 @@ async def change_video_tag_title(
     command = []
 
     for index, title in video_titles.items():
-        command.extend(
-            [f"-metadata:s:v:{index}", f'title={title}']
-        )
+        command.extend([f"-metadata:s:v:{index}", f"title={title}"])
 
     if return_command:
         return command
@@ -237,9 +235,8 @@ async def change_video_tag_title(
 
     return output_path
 
-async def change_format_tag_title(
-    input_path, output_path, title, return_command=False
-):
+
+async def change_format_tag_title(input_path, output_path, title, return_command=False):
     """
     Changes the title tag in the format metadata of a video file.
 
@@ -259,7 +256,7 @@ async def change_format_tag_title(
     command.extend(["-metadata", f"title={title}"])
 
     if return_command:
-        return command 
+        return command
 
     command.extend([output_path])
 
@@ -332,7 +329,9 @@ async def apply_metadata(file_path: str, user: dict):
 
         video_info = {}
         for video_language in video_languages:
-            new_title = f"{title['text']} - {get_lang_from_code(video_language['language'])}"
+            new_title = (
+                f"{title['text']} - {get_lang_from_code(video_language['language'])}"
+            )
             video_info[video_language["index"]] = new_title
 
         command.extend(
@@ -340,7 +339,7 @@ async def apply_metadata(file_path: str, user: dict):
                 file_path, file_path, video_info, return_command=True
             )
         )
-                
+
     filename = os.path.basename(file_path)
     output_path = f"downloads/output_{filename}"
     i_command = ["ffmpeg", "-i", file_path, "-c", "copy", "-y", "-map", "0"]

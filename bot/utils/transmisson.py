@@ -1,13 +1,23 @@
-from contextlib import suppress
 import os
 import time
+from contextlib import suppress
 
 from pyrogram import Client, types
 
-from bot.config import Config
+from bot.config import settings
+from bot.enums import TransferStatus
 from bot.exceptions import CancelledError
 from bot.utils.ffmpeg import get_video_details
-from bot.utils.helpers import *
+from bot.utils.helpers import (
+    get_destination,
+    get_thumbnail,
+    get_title,
+    get_upload_function,
+    is_transfer_cancelled,
+    preserve_username,
+    progress_for_pyrogram,
+    restore_username,
+)
 from bot.utils.translator import translate_fr_to_en
 from database import db
 
@@ -16,6 +26,7 @@ async def forward_message(
     bot: Client, app: Client, message: types.Message, user_id: int
 ):
     valid_channels = []
+    chat_id = message.chat.id
 
     user_channels = await db.user_channels.filter_documents({"user_id": user_id})
     for channel in user_channels:
@@ -23,40 +34,30 @@ async def forward_message(
             continue
 
         try:
-            chat = await bot.get_chat(channel["channel_id"])
+            await bot.get_chat(channel["channel_id"])
         except Exception as e:
             await bot.floodwait_handler(
                 bot.send_message,
                 user_id,
-                f"Chat not found - {channel['channel_id']}",
+                f"Chat not found - {channel['channel_id']} - {e}",
             )
             continue
 
         valid_channels.append(channel)
 
-    # if not valid_channels:
-    #     valid_channels.append(
-    #         {
-    #             "channel_id": user_id,
-    #             "topic_id": None,
-    #             "paid_media": {
-    #                 "status": False,
-    #                 "stars": 0,
-    #             },
-    #         }
-    #     )
-
     file_path = None
 
     if message.text:
-        text = replace_username(message.text.html)
+        orginal_text = message.text.html
+        text = preserve_username(chat_id, orginal_text)
         text = await translate_fr_to_en(text)
-        log = await app.send_message(chat_id=Config.FILES_LOG, text=text)
+        text = restore_username(chat_id, text)
+        log = await app.send_message(chat_id=get_destination(chat_id), text=text)
     else:
         file_path = await download_media(bot, user_id, message)
         if file_path:
             log, file_path = await upload_media(
-                user_id, bot, app, file_path, Config.FILES_LOG, message
+                user_id, bot, app, file_path, get_destination(chat_id), message
             )
         else:
             return await bot.send_message(
@@ -80,9 +81,9 @@ async def forward_message(
         if paid_star and (message.photo or message.video):
             # send using paid media
             if message.photo:
-                media = InputMediaPhoto(log.photo.file_id)
+                media = types.InputMediaPhoto(log.photo.file_id)
             elif message.video:
-                media = InputMediaVideo(log.video.file_id)
+                media = types.InputMediaVideo(log.video.file_id)
             await bot.floodwait_handler(
                 bot.send_paid_media,
                 chat_id=channel["channel_id"],
@@ -93,7 +94,7 @@ async def forward_message(
                 reply_to_message_id=topic_id,
             )
         elif message.media:
-            r = await bot.floodwait_handler(
+            await bot.floodwait_handler(
                 log.copy,
                 channel["channel_id"],
                 message_thread_id=topic_id,
@@ -164,13 +165,10 @@ async def upload_media(
 ):
     bot.send_paid_media
     out = await bot.floodwait_handler(bot.send_message, user_id, "Starting upload...")
-
-    user = await db.users.read(user_id)
-
+    target_channel = get_destination(message.chat.id)
     upload_instance = bot
     function = None
 
-    tg_user = await bot.get_users(user_id)
     thumbnail = await get_thumbnail(file_path)
 
     function, kwargs = await get_upload_function(message, upload_instance, file_path)
@@ -208,11 +206,12 @@ async def upload_media(
     )
     print("upload start")
 
-    caption = message.text or message.caption 
+    caption = message.text or message.caption
     if caption:
         caption = caption.html
-        caption = replace_username(caption)
+        caption = preserve_username(message.chat.id, caption)
         caption = await translate_fr_to_en(caption)
+        caption = restore_username(message.chat.id, caption)
 
     kwargs["caption"] = caption
 
@@ -224,11 +223,11 @@ async def upload_media(
         os.remove(thumbnail)
     if not log:
         raise CancelledError
-    
+
     if caption:
         with suppress(Exception):
             await app.edit_message_caption(
-                chat_id=Config.FILES_LOG,
+                chat_id=target_channel,
                 message_id=log.id,
                 caption=caption,
             )
@@ -269,7 +268,7 @@ async def resume_transfers(bot: Client):
 async def add_transfer_to_queue(
     user_id, download_id, links, link_index, status, **kwargs
 ):
-    Config.TRANSFERS[download_id] = {
+    settings.TRANSFERS[download_id] = {
         "user_id": user_id,
         "links": links,
         "link_index": link_index,
@@ -282,13 +281,13 @@ async def add_transfer_to_queue(
 
 
 async def remove_transfer_from_queue(download_id):
-    Config.TRANSFERS.pop(download_id, None)
+    settings.TRANSFERS.pop(download_id, None)
     return await db.transfers.delete(download_id)
 
 
 async def update_transfer(download_id, **kwargs):
-    if download_id in Config.TRANSFERS:
-        Config.TRANSFERS[download_id].update(kwargs)
+    if download_id in settings.TRANSFERS:
+        settings.TRANSFERS[download_id].update(kwargs)
     return await db.transfers.update(download_id, kwargs)
 
 

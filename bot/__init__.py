@@ -1,18 +1,21 @@
-from contextlib import suppress
 import os
+from contextlib import suppress
 
-if os.name != "nt": 
+if os.name != "nt":
     from uvloop import install
+
     install()
 
 import asyncio
 import logging
-from pyrogram import Client, raw, types, errors
 import logging.config
-from bot.config import Config, ContextVariables
-from typing import Iterable, List, Union, Any
-from bot.utils import add_admin, start_webserver, set_commands, ping_server
+from typing import Any, Iterable, List, Union
+
 import pyromod
+from pyrogram import Client, errors, raw, types
+
+from bot.config import ContextVariables, settings
+from bot.utils import add_admin, ping_server, set_commands, start_webserver
 from database import db
 
 # Get logging configurations
@@ -22,14 +25,15 @@ logging.getLogger("pyrogram").setLevel(logging.ERROR)
 logging.getLogger("apscheduler").setLevel(logging.ERROR)
 logging.getLogger("httpx").setLevel(logging.ERROR)
 
+
 class User(Client):
     def __init__(self, session_string: str, **kwargs):
         name = kwargs.get("name", "user")
         kwargs.pop("name", None)
         super().__init__(
             name,
-            api_id=Config.API_ID,
-            api_hash=Config.API_HASH,
+            api_id=settings.API_ID,
+            api_hash=settings.API_HASH,
             session_string=session_string,
             plugins=dict(root="user/plugins"),
             **kwargs,
@@ -38,7 +42,7 @@ class User(Client):
     async def start(self, *args, **kwargs):
         try:
             await super().start(*args, **kwargs)
-        except Exception as e:
+        except Exception:
             user = await db.users.filter_document(
                 {"session.string": self.session_string}
             )
@@ -53,9 +57,9 @@ class User(Client):
 
         me = await self.get_me()
         self.username = f"@{me.username}"
-        Config.CLIENTS[me.id] = self
+        settings.CLIENTS[me.id] = self
         logging.info(f"User {self.username} started")
-        logging.info(f"Owner: {Config.OWNER_ID}")
+        logging.info(f"Owner: {settings.OWNER_ID}")
         return self
 
     async def stop(self, *args):
@@ -67,9 +71,9 @@ class Bot(Client):
     def __init__(self):
         super().__init__(
             "bot",
-            api_id=Config.API_ID,
-            api_hash=Config.API_HASH,
-            bot_token=Config.BOT_TOKEN,
+            api_id=settings.API_ID,
+            api_hash=settings.API_HASH,
+            bot_token=settings.BOT_TOKEN,
             plugins=dict(root="bot/plugins"),
         )
 
@@ -77,14 +81,14 @@ class Bot(Client):
         await super().start(*args, **kwargs)
 
         me = await self.get_me()
-       
+
         self.username = f"@{me.username}"
 
         logging.info(f"Bot started as {self.username}")
         # self.owner = await self.get_users(int(Config.OWNER_ID))
         # logging.info(f"Owner: {self.owner.full_name}")
 
-        await add_admin(Config.OWNER_ID)
+        await add_admin(settings.OWNER_ID)
         await set_commands(self)
 
         clients_to_start = []
@@ -99,13 +103,15 @@ class Bot(Client):
         logging.info(f"Started {len(clients_to_start)} users")
 
         ContextVariables.BOT = self
-        
-        if Config.WEB_SERVER:
+
+        if settings.WEB_SERVER:
             await start_webserver()
             await asyncio.create_task(ping_server())
 
     async def stop(self, *args):
-        await asyncio.gather(*[self.suppress(c.stop) for c in Config.CLIENTS.values()])
+        await asyncio.gather(
+            *[self.suppress(c.stop) for c in settings.CLIENTS.values()]
+        )
         await super().stop()
 
     async def get_users(

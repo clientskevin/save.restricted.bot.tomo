@@ -30,6 +30,7 @@ class FileUploadMode(Enum):
     VIDEO = "video"
     DOCUMENT = "document"
 
+
 class TransferStatus(Enum):
     IN_PROGRESS = "in_progress"
     CANCELLED = "cancelled"

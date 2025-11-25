@@ -11,3 +11,5 @@ Requests==2.32.3
 uvloop==0.19.0; sys_platform != 'win32'
 tabulate
 googletrans==4.0.2
+pydantic-settings==2.5.2
+pyyaml==6.0.2

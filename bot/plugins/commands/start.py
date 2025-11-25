@@ -1,5 +1,6 @@
 from pyrogram import Client, filters
-from pyrogram.types import Message, InlineKeyboardMarkup, InlineKeyboardButton
+from pyrogram.types import InlineKeyboardButton, InlineKeyboardMarkup, Message
+
 from bot.config import Script
 from bot.utils import add_user
 

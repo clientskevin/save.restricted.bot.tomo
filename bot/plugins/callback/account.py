@@ -1,12 +1,14 @@
 import traceback
+
 from pyrogram import Client, filters
 from pyrogram.types import (
+    CallbackQuery,
     InlineKeyboardButton,
     InlineKeyboardMarkup,
-    CallbackQuery,
     Message,
 )
-from bot.config import Config
+
+from bot.config import settings
 from bot.plugins.callback.login import generate_session
 from database import db
 
@@ -14,7 +16,6 @@ from database import db
 @Client.on_message(filters.command("account") & filters.private & filters.incoming)
 @Client.on_callback_query(filters.regex("^connected_account$"))
 async def connected_account(bot: Client, message: CallbackQuery | Message):
-
     user = await db.users.read(message.from_user.id)
     session = user.get("session", {})
 
@@ -54,12 +55,12 @@ async def disconnect_account(bot: Client, message: CallbackQuery):
     await db.users.remove_session(message.from_user.id)
 
     try:
-        app = Config.CLIENTS[user["session"]["id"]]
+        app = settings.CLIENTS[user["session"]["id"]]
         await app.stop()
-    except Exception as e:
+    except Exception:
         traceback.print_exc()
 
-    Config.CLIENTS.pop(user["session"]["id"], None)
+    settings.CLIENTS.pop(user["session"]["id"], None)
 
     await message.edit_message_text(
         "🚪 **Account successfully logged out**.",

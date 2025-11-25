@@ -1,10 +1,11 @@
 from pyrogram import Client, filters
 from pyrogram.types import Message
-from bot.config import Config
+
+from bot.config import settings
 
 
 @Client.on_message(
-    filters.command("admin") & filters.private & filters.user(Config.OWNER_ID)
+    filters.command("admin") & filters.private & filters.user(settings.OWNER_ID)
 )
 @Client.on_callback_query(filters.regex("^admin"))
 async def admin(client: Client, message: Message):
@@ -23,6 +24,6 @@ async def admin(client: Client, message: Message):
 📢 Others:
 /broadcast - Broadcast a message to all users
 /mediatype - Manage the media type to be forwarded
-    """ 
+    """
 
     await client.reply(message, text)

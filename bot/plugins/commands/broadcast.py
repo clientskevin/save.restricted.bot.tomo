@@ -1,15 +1,17 @@
-from contextlib import suppress
-from pyrogram import Client, filters, errors, types
-import datetime
-import time
-from database import db
-from bot.config import Config
 import asyncio
+import datetime
 import logging
+import time
+from contextlib import suppress
+
+from pyrogram import Client, errors, filters, types
+
+from bot.config import settings
+from database import db
 
 
 @Client.on_message(
-    filters.command("broadcast") & filters.user(Config.OWNER_ID) & filters.incoming
+    filters.command("broadcast") & filters.user(settings.OWNER_ID) & filters.incoming
 )
 async def b_handler(bot, message: types.Message):
     try:
@@ -60,7 +62,7 @@ async def b_handler(bot, message: types.Message):
         success += success1
 
         if not done % 50 and done != 0:
-            text = f"Broadcast Completed:\n\n"
+            text = "Broadcast Completed:\n\n"
             text += f"Total Users {total_users}\n"
             text += f"Completed: {done} / {total_users}\n"
             text += f"Success: {success}\n"
@@ -72,7 +74,7 @@ async def b_handler(bot, message: types.Message):
 
     time_taken = datetime.timedelta(seconds=int(time.time() - start_time))
     with suppress(Exception):
-        text = f"Broadcast Completed:\n"
+        text = "Broadcast Completed:\n"
         text += f"Completed in {time_taken} seconds.\n\n"
         text += f"Total Users {total_users}\n"
         text += f"Completed: {done} / {total_users}\n"
@@ -88,7 +90,7 @@ async def broadcast_func(user, b_msg):
     pti, sh = await broadcast_messages(int(user["_id"]), b_msg)
     if pti:
         success = 1
-    elif pti == False:
+    elif pti is False:
         if sh == "Blocked":
             blocked = 1
         elif sh == "Deleted":

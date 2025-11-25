@@ -1,5 +1,5 @@
-from database.core import Core
 from bot.config import Script
+from database.core import Core
 
 
 class UserDatabase(Core):

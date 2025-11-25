@@ -1,22 +1,28 @@
-from pyrogram import Client, filters, enums
-from pyrogram.types import Message, InlineKeyboardMarkup, InlineKeyboardButton
-from bot.config import Config
-from bot.plugins.on_https_message import on_https_message
-from bot.utils import get_link_parts, get_user_client, is_input_cancelled
-from database import db
 import logging
 
+from pyrogram import Client, enums, filters
+from pyrogram.types import InlineKeyboardButton, InlineKeyboardMarkup, Message
+
+from bot.config import settings
+from bot.plugins.on_https_message import on_https_message
+from bot.utils import get_link_parts, get_user_client, is_input_cancelled
 
 logger = logging.getLogger(__name__)
 
-@Client.on_message(filters.command("batch") & filters.private & filters.incoming & filters.user(Config.OWNER_ID))
+
+@Client.on_message(
+    filters.command("batch")
+    & filters.private
+    & filters.incoming
+    & filters.user(settings.OWNER_ID)
+)
 async def batch(bot: Client, message: Message):
     user_id = message.from_user.id
 
     app = await get_user_client(user_id)
 
     if not app or not app.is_connected:
-        Config.CLIENTS.pop(app.me.id, None) if app and app.me else None
+        settings.CLIENTS.pop(app.me.id, None) if app and app.me else None
         return await message.reply_text(
             "⚠️ You need to login first to use this feature.",
             reply_markup=InlineKeyboardMarkup(
@@ -26,9 +32,7 @@ async def batch(bot: Client, message: Message):
 
     user_message = message
 
-    batch_limit = 1000
-
-    text = f"📊 Batch limit: 1000 messages\n\n"
+    text = "📊 Batch limit: 1000 messages\n\n"
     text += "Forward the message link from the chat from where you'd like to batch-save messages.\n\n"
     text += "Example: \n1. https://t.me/c/2114152609/1\n\n"
     text += "\n\n/cancel to cancel ❌"
