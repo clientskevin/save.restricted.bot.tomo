@@ -408,11 +408,13 @@ def parse_duration(duration: str) -> int:
 
 def replace_username(source: int, text: str) -> str:
     replace = settings.FORWARD_CONFIG.get(source, {}).get("replace")
-    print(replace)
     if not replace:
         return text
     for key, value in replace.items():
         text = re.sub(re.escape(key), value, text, flags=re.IGNORECASE)
+
+    # remove __ before and after emoji
+    text = re.sub(r"__<emoji[^>]*></emoji>__", lambda match: match.group(0)[2:-2], text)
     return text
 
 
@@ -424,6 +426,10 @@ def preserve_username(source: int, text: str) -> str:
     for key, value in replace.items():
         placeholder = f"__{key}__"
         text = re.sub(re.escape(key), placeholder, text, flags=re.IGNORECASE)
+
+    # <emoji ...></emoji> 
+    # need to add __ before and after emoji
+    text = re.sub(r"<emoji[^>]*></emoji>", lambda match: f"__{match.group(0)}__", text)
     return text
 
 
