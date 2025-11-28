@@ -6,6 +6,7 @@ forwards:
     dest: -1003484865062
     lang: fr
     replace:
+      "@finstrasupport": "@goldaiofficialsupport"
       FINSTRA: GOLD AI
 
   -1002477064021:
