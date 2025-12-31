@@ -450,15 +450,23 @@ def preserve_username(source: int, text: str, unqiue_key: str) -> str:
         # Create a unique placeholder using UUID that won't be translated
         # Format: XPHLDRX_<random_hex> - translators treat this as a proper noun/code
         unique_id = uuid.uuid4().hex[:8]
-        placeholder = f"XPHLDRX_{unique_id}"
+        placeholder = f"XPHLDRX{unique_id}"
         _placeholder_mapping[mapping_key][placeholder] = value
         
         # Replace all occurrences of the key with the placeholder (case-insensitive)
         text = re.sub(re.escape(key), placeholder, text, flags=re.IGNORECASE)
     
     # <emoji ...></emoji> 
-    # need to add __ before and after emoji
-    text = re.sub(r"<emoji[^>]*></emoji>", lambda match: f"__{match.group(0)}__", text)
+    # Preserve emoji tags with UUID placeholders
+    def replace_emoji(match):
+        emoji_tag = match.group(0)
+        unique_id = uuid.uuid4().hex[:8]
+        placeholder = f"XEMOJIX{unique_id}"
+        _placeholder_mapping[mapping_key][placeholder] = emoji_tag
+        return placeholder
+    
+    # Match complete emoji tags: <emoji id="...">emoji_char</emoji>
+    text = re.sub(r"<emoji[^>]*>.*?</emoji>", replace_emoji, text)
     return text
 
 

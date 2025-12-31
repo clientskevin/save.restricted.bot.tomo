@@ -12,11 +12,12 @@ from pyrogram import Client
 from pyrogram.errors import MessageDeleteForbidden, MessageIdInvalid
 
 BOT_TOKEN = "8510885908:AAHY1J-Bc_sbwDB8eX-XYYWKsL25Djg3Onk"
-start_message_id = 278
+start_message_id = 1448
 api_id = 26033244
 api_hash = "b06a711dfb9dcb0fbf707758b5117216"
 channel_id = -1003490790931
 session = "BQGNPFwAsULpstS5pkHdUJPYKUSLfWLfz_4EA1DC1-BpuWfIRzsKYyKGDQgjZsohxogTzFDHe7b98LIAmrKfdWIPgI-dOp--tnjXuj_Un6ZHeBQEbqW4cxIpgjN6gdYMDLlYHDFkl9fK5fVh9zcNxzm_sF0A-j_wnXYcvbiOWfuQbFBseagJ88YIBOlhUi-P-XYTe_uu44z2qQt0scfkJoL99RNfKD6CVJ8mwzTJeYUgsDJMBuFMjOt_AqKOsIOHtpolYrFE6DgsltaqYWFgrqoocTl9PdD1B_8icKTY_yycX83Zw4a7Xe01yOW2mWcbhG2-U0zPvIXeaePQ2QXirJfDdfeXtAAAAAAeAPHfAA"
+last_message_id = 1489
 
 async def delete_messages_to_last():
     app = Client(
@@ -30,7 +31,6 @@ async def delete_messages_to_last():
     async with app:
         try:
             # Get the last message ID in the channel
-            last_message_id = 786
             messages_to_delete = list(range(start_message_id, last_message_id + 1))
             
             # Pyrogram's delete_messages can take a list of message IDs

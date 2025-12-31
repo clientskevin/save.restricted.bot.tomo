@@ -14,13 +14,17 @@ __version__ = "0.1.0"
 from googletrans import Translator
 
 
+import asyncio
+
+
 async def translate_fr_to_en(text: str) -> str:
     translator = Translator()
-    result = await translator.translate(text, dest="es")
-    return result.text
+    for attempt in range(3):
+        try:
+            result = await translator.translate(text, dest="es")
+            return result.text
+        except Exception:
+            if attempt == 2:
+                raise
+            await asyncio.sleep(2**attempt)
 
-
-if __name__ == "__main__":
-    sample = "Bonjour, je suis développeur."
-    print(translate_fr_to_en(sample))
-    

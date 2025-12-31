@@ -128,7 +128,7 @@ dmypy.json
 .pyre/
 *.session
 *.session-journal
-test.py
+
 todo.txt
 .DS_Store
 output.mkv
@@ -136,3 +136,6 @@ config.env
 text.txt
 tets.py
 dev_config.yaml
+delete_all.py
+get_message.py
+test.py
