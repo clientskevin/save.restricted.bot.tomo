@@ -60,9 +60,7 @@ async def forward_message(
                 user_id, bot, app, file_path, get_destination(chat_id), message
             )
         else:
-            return await bot.send_message(
-                user_id, "No media found to forward the message."
-            )
+            return
 
     if not log:
         return await bot.send_message(

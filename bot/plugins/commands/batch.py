@@ -138,7 +138,8 @@ async def batch(bot: Client, message: Message):
                 continue
 
             messages.append(message)
-            messages = sorted(messages, key=lambda x: x.id)
+
+    messages = sorted(messages, key=lambda x: x.id)
 
     valid_messages = []
 
