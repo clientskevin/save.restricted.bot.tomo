@@ -5,6 +5,7 @@ import math
 import random
 import re
 import time
+import uuid
 
 import aiohttp
 from aiohttp import web
@@ -16,6 +17,7 @@ from bot.enums import TransferStatus
 from bot.utils.ffmpeg import create_thumbnail
 from database import db
 
+_placeholder_mapping = {}
 
 async def get_thumbnail(file_path):
     thumbnail = await create_thumbnail(file_path)
@@ -418,29 +420,72 @@ def replace_username(source: int, text: str) -> str:
     return text
 
 
-def preserve_username(source: int, text: str) -> str:
-    # replace all the source text with placeholder which trnslate will not translate
+def preserve_username(source: int, text: str, unqiue_key: str) -> str:
+    """
+    Replace all the source text with unique placeholders that translation will not translate.
+    Uses UUID-based placeholders like XPHLDRX_a1b2c3d4 that are immune to translation.
+    
+    Args:
+        source: Source chat ID
+        text: Text to process
+        message_id: Message ID for unique mapping key (optional, defaults to 0)
+    """
+    global _placeholder_mapping
+    
+    # Create a unique key for this message
+    mapping_key = unqiue_key
+    
+    # Initialize mapping for this message
+    _placeholder_mapping[mapping_key] = {}
+    
     replace = settings.FORWARD_CONFIG.get(source, {}).get("replace")
     if not replace:
         return text
-    for key, value in replace.items():
-        placeholder = f"__{key}__"
+    
+    # Sort by key length (longest first) to handle overlapping keys correctly
+    # e.g., "@finstrasupport" should be replaced before "FINSTRA"
+    sorted_items = sorted(replace.items(), key=lambda x: len(x[0]), reverse=True)
+    
+    for key, value in sorted_items:
+        # Create a unique placeholder using UUID that won't be translated
+        # Format: XPHLDRX_<random_hex> - translators treat this as a proper noun/code
+        unique_id = uuid.uuid4().hex[:8]
+        placeholder = f"XPHLDRX_{unique_id}"
+        _placeholder_mapping[mapping_key][placeholder] = value
+        
+        # Replace all occurrences of the key with the placeholder (case-insensitive)
         text = re.sub(re.escape(key), placeholder, text, flags=re.IGNORECASE)
-
+    
     # <emoji ...></emoji> 
     # need to add __ before and after emoji
     text = re.sub(r"<emoji[^>]*></emoji>", lambda match: f"__{match.group(0)}__", text)
     return text
 
 
-def restore_username(source: int, text: str) -> str:
-    # replace all the placeholder with source text
-    replace = settings.FORWARD_CONFIG.get(source, {}).get("replace")
-    if not replace:
+def restore_username(source: int, text: str, unqiue_key: str) -> str:
+    """
+    Replace all the placeholders with their actual replacement values.
+    
+    Args:
+        source: Source chat ID
+        text: Text to process
+        message_id: Message ID for unique mapping key (optional, defaults to 0)
+    """
+    global _placeholder_mapping
+    
+    # Create the same unique key used in preserve_username
+    mapping_key = unqiue_key
+    
+    if mapping_key not in _placeholder_mapping:
         return text
-    for key, value in replace.items():
-        placeholder = f"__{key}__"
+    
+    # Replace placeholders with their actual values
+    for placeholder, value in _placeholder_mapping[mapping_key].items():
         text = re.sub(re.escape(placeholder), value, text, flags=re.IGNORECASE)
+    
+    # Clean up the mapping for this message to free memory
+    del _placeholder_mapping[mapping_key]
+    
     return text
 
 
