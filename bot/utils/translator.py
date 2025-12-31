@@ -16,10 +16,11 @@ from googletrans import Translator
 
 async def translate_fr_to_en(text: str) -> str:
     translator = Translator()
-    result = await translator.translate(text, dest="fr")
+    result = await translator.translate(text, dest="es")
     return result.text
 
 
 if __name__ == "__main__":
     sample = "Bonjour, je suis développeur."
     print(translate_fr_to_en(sample))
+    
