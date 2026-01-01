@@ -24,7 +24,8 @@ logging.getLogger().setLevel(logging.INFO)
 logging.getLogger("pyrogram").setLevel(logging.ERROR)
 logging.getLogger("apscheduler").setLevel(logging.ERROR)
 logging.getLogger("httpx").setLevel(logging.ERROR)
-
+logging.getLogger("aiohttp").setLevel(logging.ERROR)
+logging.getLogger("aiohttp.access").setLevel(logging.ERROR)
 
 class User(Client):
     def __init__(self, session_string: str, **kwargs):
@@ -101,6 +102,7 @@ class Bot(Client):
 
         await asyncio.gather(*[c.start() for c in clients_to_start])
         logging.info(f"Started {len(clients_to_start)} users")
+        logging.info(f"Config File: {settings.CONFIG_FILE}")
 
         ContextVariables.BOT = self
 

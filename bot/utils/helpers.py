@@ -75,7 +75,7 @@ async def ping_server():
                 async with aiohttp.ClientSession() as session:
                     async with session.get(settings.WEB_URL) as response:
                         if response.status == 200:
-                            logging.info("Pinged web server successfully.")
+                            logging.debug("Pimsg=nged web server successfully.")
                         else:
                             logging.warning(
                                 f"Ping to web server returned status code {response.status}."

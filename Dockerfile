@@ -14,6 +14,7 @@ COPY . .
 
 # Install the Python dependencies
 RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install --no-cache-dir -r no_deps_requirements.txt --no-deps
 
 # Set the command to run the Python script
 CMD [ "python", "main.py" ]

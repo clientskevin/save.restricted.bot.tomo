@@ -12,7 +12,7 @@ __version__ = "0.1.0"
 
 import logging
 
-from pyrogram import Client
+from pyrogram import Client, filters
 from pyrogram.types import Message
 
 from bot.config import ContextVariables, settings
@@ -21,14 +21,16 @@ from bot.plugins.on_https_message import on_https_message
 logger = logging.getLogger(__name__)
 
 
-@Client.on_message()
+@Client.on_message(filters.chat(settings.ON_MESSAGE_SOURCE))
 async def on_channel_message(bot: Client, message: Message):
     """
     Automatically process messages from ON_MESSAGE_SOURCE channel
     """
-
+    # print(message)
+    # print(settings.ON_MESSAGE_SOURCE, message.chat.id)
     if message.chat.id not in settings.ON_MESSAGE_SOURCE:
         return
+
 
     # Build the message link
     if message.chat.username:
