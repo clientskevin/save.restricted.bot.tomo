@@ -16,10 +16,16 @@ forwards:
   #     "@finstrasupport": "@goldaiofficialsupport"
   #     FINSTRA: GOLD AI
 
+  # -1002477064021:
+  #   dest: -1003490790931
+  #   lang: es
+  #   replace:
+  #     "@finstrasupport": "@goldaiofficialsupport"
+  #     "FINSTRA": "GOLD AI"
+  #     "FINTRA": "GOLD AI"
+
   -1002477064021:
-    dest: -1003490790931
+    dest: -1003654063319
     lang: es
     replace:
-      "@finstrasupport": "@goldaiofficialsupport"
-      "FINSTRA": "GOLD AI"
-      "FINTRA": "GOLD AI"
+      "@finstrasupport": "@finstrasoporte"
