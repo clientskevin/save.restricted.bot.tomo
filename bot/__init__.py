@@ -102,7 +102,9 @@ class Bot(Client):
 
         await asyncio.gather(*[c.start() for c in clients_to_start])
         logging.info(f"Started {len(clients_to_start)} users")
-        logging.info(f"Config File: {settings.CONFIG_FILE}")
+        
+        # Log forward configuration
+        settings.log_forward_config(logging)
 
         ContextVariables.BOT = self
 

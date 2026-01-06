@@ -12,20 +12,20 @@ from pyrogram import Client
 from pyrogram.errors import MessageDeleteForbidden, MessageIdInvalid
 
 BOT_TOKEN = "8510885908:AAHY1J-Bc_sbwDB8eX-XYYWKsL25Djg3Onk"
-start_message_id = 1448
+start_message_id = 2042
 api_id = 26033244
 api_hash = "b06a711dfb9dcb0fbf707758b5117216"
 channel_id = -1003490790931
 session = "BQGNPFwAsULpstS5pkHdUJPYKUSLfWLfz_4EA1DC1-BpuWfIRzsKYyKGDQgjZsohxogTzFDHe7b98LIAmrKfdWIPgI-dOp--tnjXuj_Un6ZHeBQEbqW4cxIpgjN6gdYMDLlYHDFkl9fK5fVh9zcNxzm_sF0A-j_wnXYcvbiOWfuQbFBseagJ88YIBOlhUi-P-XYTe_uu44z2qQt0scfkJoL99RNfKD6CVJ8mwzTJeYUgsDJMBuFMjOt_AqKOsIOHtpolYrFE6DgsltaqYWFgrqoocTl9PdD1B_8icKTY_yycX83Zw4a7Xe01yOW2mWcbhG2-U0zPvIXeaePQ2QXirJfDdfeXtAAAAAAeAPHfAA"
-last_message_id = 1489
+last_message_id = 2119
 
 async def delete_messages_to_last():
     app = Client(
         "my_bot_session",
         api_id=api_id,
         api_hash=api_hash,
-        # bot_token=BOT_TOKEN,
-        session_string=session
+       bot_token=BOT_TOKEN,
+        # session_string=session
     )
 
     async with app:

@@ -82,6 +82,48 @@ class Config(BaseSettings):
         self.ON_MESSAGE_SOURCE = list(self.FORWARD_CONFIG.keys())
         return self
 
+    def log_forward_config(self, logger) -> None:
+        """Log forward configuration details in a structured format."""
+        logger.info("=" * 60)
+        logger.info(f"Forward Configuration from: {self.CONFIG_FILE}")
+        logger.info("=" * 60)
+        
+        if not self.FORWARD_CONFIG:
+            logger.info("  No forward configurations found")
+            logger.info("=" * 60)
+            return
+        
+        logger.info(f"Total Sources: {len(self.ON_MESSAGE_SOURCE)}")
+        logger.info(f"Source IDs: {', '.join(map(str, self.ON_MESSAGE_SOURCE))}")
+        logger.info("-" * 60)
+        
+        for source_id, config in self.FORWARD_CONFIG.items():
+            logger.info(f"\n📍 Source ID: {source_id}")
+            
+            # Log destinations
+            destinations = config.get('destinations', [])
+            logger.info(f"  ├─ Destinations: {len(destinations)}")
+            for dest in destinations:
+                logger.info(f"  │  └─ {dest}")
+            
+            # Log filters
+            filters = config.get('filters', {})
+            if filters:
+                logger.info("  ├─ Filters:")
+                for filter_type, filter_value in filters.items():
+                    logger.info(f"  │  ├─ {filter_type}: {filter_value}")
+            else:
+                logger.info("  ├─ Filters: None")
+            
+            # Log other config options
+            other_keys = [k for k in config.keys() if k not in ['destinations', 'filters']]
+            if other_keys:
+                logger.info("  └─ Other Settings:")
+                for key in other_keys:
+                    logger.info(f"     └─ {key}: {config[key]}")
+        
+        logger.info("\n" + "=" * 60)
+
 
 # Create a singleton instance
 settings = Config()
