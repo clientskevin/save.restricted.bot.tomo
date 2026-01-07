@@ -10,6 +10,7 @@ Description: Automatically saves messages from specified source channel
 __author__ = "Maria Kevin"
 __version__ = "0.1.0"
 
+import copy
 import logging
 
 from pyrogram import Client, filters
@@ -26,28 +27,34 @@ async def on_channel_message(bot: Client, message: Message):
     """
     Automatically process messages from ON_MESSAGE_SOURCE channel
     """
-    # print(message)
-    # print(settings.ON_MESSAGE_SOURCE, message.chat.id)
-    if message.chat.id not in settings.ON_MESSAGE_SOURCE:
-        return
 
+    # Save original chat info before any modifications
+    original_chat = message.chat
+    original_chat_username = getattr(original_chat, 'username', None)
 
-    # Build the message link
-    if message.chat.username:
-        # Public channel
-        link = f"https://t.me/{message.chat.username}/{message.id}"
-    else:
-        # Private channel
-        chat_id = str(message.chat.id).replace("-100", "")
-        link = f"https://t.me/c/{chat_id}/{message.id}"
+    for config in settings.FORWARD_CONFIG:
 
-    # Create a fake user message to pass to the handler
-    # We'll use the OWNER_ID as the user who requested this
-    user_message = message
-    user_message.text = link
-    user_message.from_user = type("obj", (object,), {"id": settings.OWNER_ID})()
-    user_message._client = ContextVariables.BOT
-    user_message.chat = type("obj", (object,), {"id": settings.OWNER_ID})()
+        print(config)
+        if config["source"] != original_chat.id:
+            print("Skipping", config["source"], original_chat.id)
+            continue
 
-    # Call the HTTPS handler to process the link
-    await on_https_message(ContextVariables.BOT, user_message, is_batch=False)
+        # Build the message link
+        if original_chat_username:
+            # Public channel
+            link = f"https://t.me/{original_chat_username}/{message.id}"
+        else:
+            # Private channel
+            chat_id = str(original_chat.id).replace("-100", "")
+            link = f"https://t.me/c/{chat_id}/{message.id}"
+
+        # Create a fake user message to pass to the handler
+        # We'll use the OWNER_ID as the user who requested this
+        user_message = copy.deepcopy(message)
+        user_message.text = link
+        user_message.from_user = type("obj", (object,), {"id": settings.OWNER_ID})()
+        user_message._client = ContextVariables.BOT
+        user_message.chat = type("obj", (object,), {"id": settings.OWNER_ID})()
+
+        # Call the HTTPS handler to process the link
+        await on_https_message(ContextVariables.BOT, user_message, is_batch=False, config=config)

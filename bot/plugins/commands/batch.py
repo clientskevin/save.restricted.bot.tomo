@@ -5,7 +5,12 @@ from pyrogram.types import InlineKeyboardButton, InlineKeyboardMarkup, Message
 
 from bot.config import settings
 from bot.plugins.on_https_message import on_https_message
-from bot.utils import get_link_parts, get_user_client, is_input_cancelled
+from bot.utils import (
+    get_config_from_dest_link,
+    get_link_parts,
+    get_user_client,
+    is_input_cancelled,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -102,6 +107,11 @@ async def batch(bot: Client, message: Message):
         await message.reply_text(text)
         return
 
+    # Get destination config
+    config = await get_config_from_dest_link(message, first_message.text)
+    if not config:
+        return
+        
     out = await message.reply_text("🔄 Fetching messages...")
 
     if not (first_topic_id and last_topic_id):
@@ -139,6 +149,7 @@ async def batch(bot: Client, message: Message):
 
             messages.append(message)
 
+
     messages = sorted(messages, key=lambda x: x.id)
 
     valid_messages = []
@@ -164,4 +175,4 @@ async def batch(bot: Client, message: Message):
     user_message.text = text
 
     logger.info(f"Batching {len(valid_messages)} messages")
-    await on_https_message(bot, user_message, is_batch=True)
+    await on_https_message(bot, user_message, is_batch=True, config=config)

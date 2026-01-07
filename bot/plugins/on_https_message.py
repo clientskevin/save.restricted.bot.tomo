@@ -10,6 +10,7 @@ from bot.exceptions import CancelledError
 from bot.utils import (
     add_transfer_to_queue,
     forward_message,
+    get_config_from_dest_link,
     get_link_parts,
     get_media_type,
     get_user_client,
@@ -42,6 +43,14 @@ def CANCEL_MARKUP(download_id):
 async def on_https_message(bot: Client, message: types.Message, **kwargs):
     user_message = message
     is_batch = kwargs.get("is_batch", False)
+    config = kwargs.get("config")
+
+    # If config not provided, ask user for destination link
+    if not config:
+        config = await get_config_from_dest_link(message, message.text)
+        if not config:
+            return
+
 
     if not is_valid_link(message):
         return await message.reply_text("Invalid link.")
@@ -204,7 +213,7 @@ async def on_https_message(bot: Client, message: types.Message, **kwargs):
         )
 
         try:
-            await forward_message(bot, app, message, user_id)
+            await forward_message(bot, app, message, user_id, config)
         except CancelledError:
             await remove_transfer_from_queue(download_id)
             break

@@ -10,7 +10,6 @@ from bot.enums import TransferStatus
 from bot.exceptions import CancelledError
 from bot.utils.ffmpeg import get_video_details
 from bot.utils.helpers import (
-    get_destination,
     get_thumbnail,
     get_title,
     get_upload_function,
@@ -24,7 +23,7 @@ from database import db
 
 
 async def forward_message(
-    bot: Client, app: Client, message: types.Message, user_id: int
+    bot: Client, app: Client, message: types.Message, user_id: int, config: dict
 ):
     valid_channels = []
     chat_id = message.chat.id
@@ -51,15 +50,15 @@ async def forward_message(
     if message.text:
         unique_key = str(uuid.uuid4())
         orginal_text = message.text.html
-        text = preserve_username(chat_id, orginal_text, unique_key)
+        text = preserve_username(config, orginal_text, unique_key)
         text = await translate(text)
-        text = restore_username(chat_id, text, unique_key)
-        log = await app.send_message(chat_id=get_destination(chat_id), text=text)
+        text = restore_username(text, unique_key)
+        log = await app.send_message(chat_id=config["dest"], text=text)
     else:
         file_path = await download_media(bot, user_id, message)
         if file_path:
             log, file_path = await upload_media(
-                user_id, bot, app, file_path, get_destination(chat_id), message
+                user_id, bot, app, file_path,  message, config
             )
         else:
             return
@@ -156,16 +155,16 @@ async def download_media(bot, user_id, message: types.Message):
 
 
 async def upload_media(
-    user_id,
+    user_id: int,
     bot: Client,
     app: Client,
     file_path: str,
-    channel_id: int,
     message: types.Message,
+    config: dict,
 ):
     bot.send_paid_media
     out = await bot.floodwait_handler(bot.send_message, user_id, "Starting upload...")
-    target_channel = get_destination(message.chat.id)
+    target_channel = config["dest"]
     upload_instance = bot
     function = None
 
@@ -185,7 +184,7 @@ async def upload_media(
         kwargs["width"] = width
         kwargs["height"] = height
 
-    kwargs["chat_id"] = channel_id
+    kwargs["chat_id"] = target_channel
 
     media = ["audio", "document", "video", "photo"]
     if any(media_type in kwargs for media_type in media) and thumbnail:
@@ -210,9 +209,9 @@ async def upload_media(
     if caption:
         unique_key = str(uuid.uuid4())
         caption = caption.html
-        caption = preserve_username(message.chat.id, caption, unique_key)
+        caption = preserve_username(config, caption, unique_key)
         caption = await translate(caption)
-        caption = restore_username(message.chat.id, caption, unique_key)
+        caption = restore_username(caption, unique_key)
 
     kwargs["caption"] = caption
 

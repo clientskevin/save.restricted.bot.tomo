@@ -408,19 +408,8 @@ def parse_duration(duration: str) -> int:
         return int(duration)
 
 
-def replace_username(source: int, text: str) -> str:
-    replace = settings.FORWARD_CONFIG.get(source, {}).get("replace")
-    if not replace:
-        return text
-    for key, value in replace.items():
-        text = re.sub(re.escape(key), value, text, flags=re.IGNORECASE)
 
-    # remove __ before and after emoji
-    text = re.sub(r"__<emoji[^>]*></emoji>__", lambda match: match.group(0)[2:-2], text)
-    return text
-
-
-def preserve_username(source: int, text: str, unqiue_key: str) -> str:
+def preserve_username(config: dict, text: str, unqiue_key: str) -> str:
     """
     Replace all the source text with unique placeholders that translation will not translate.
     Uses UUID-based placeholders like XPHLDRX_a1b2c3d4 that are immune to translation.
@@ -438,7 +427,7 @@ def preserve_username(source: int, text: str, unqiue_key: str) -> str:
     # Initialize mapping for this message
     _placeholder_mapping[mapping_key] = {}
     
-    replace = settings.FORWARD_CONFIG.get(source, {}).get("replace")
+    replace = config.get("replace")
     if not replace:
         return text
     
@@ -470,12 +459,11 @@ def preserve_username(source: int, text: str, unqiue_key: str) -> str:
     return text
 
 
-def restore_username(source: int, text: str, unqiue_key: str) -> str:
+def restore_username(text: str, unqiue_key: str) -> str:
     """
     Replace all the placeholders with their actual replacement values.
     
     Args:
-        source: Source chat ID
         text: Text to process
         message_id: Message ID for unique mapping key (optional, defaults to 0)
     """
@@ -496,6 +484,3 @@ def restore_username(source: int, text: str, unqiue_key: str) -> str:
     
     return text
 
-
-def get_destination(source: int) -> int | None:
-    return settings.FORWARD_CONFIG.get(source, {}).get("dest")

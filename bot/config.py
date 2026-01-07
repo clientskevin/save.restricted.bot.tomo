@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Any, Dict, Optional
+from typing import Any, Dict, List, Optional
 
 import yaml
 from pydantic import Field, field_validator, model_validator
@@ -47,8 +47,8 @@ class Config(BaseSettings):
     # --------------- Runtime attributes (not from env) ------------------
     CLIENTS: Dict[Any, Any] = Field(default_factory=dict, exclude=True)
     TRANSFERS: Dict[Any, Any] = Field(default_factory=dict, exclude=True)
-    FORWARD_CONFIG: Dict[int, Dict[str, Any]] = Field(
-        default_factory=dict, exclude=True
+    FORWARD_CONFIG: List[Dict[str, Any]] = Field(
+        default_factory=list, exclude=True
     )
     ON_MESSAGE_SOURCE: list = Field(default_factory=list, exclude=True)
 
@@ -79,8 +79,9 @@ class Config(BaseSettings):
         config_path = Path(self.CONFIG_FILE)
         with open(config_path, "r", encoding="utf-8") as f:
             yaml_data = yaml.safe_load(f)
-        self.FORWARD_CONFIG = {int(k): v for k, v in yaml_data["forwards"].items()}
-        self.ON_MESSAGE_SOURCE = list(self.FORWARD_CONFIG.keys())
+
+        self.FORWARD_CONFIG = yaml_data["forwards"]
+        self.ON_MESSAGE_SOURCE = list(x["source"] for x in self.FORWARD_CONFIG)
         return self
 
     def log_forward_config(self, logger) -> None:
@@ -98,31 +99,22 @@ class Config(BaseSettings):
         logger.info(f"Source IDs: {', '.join(map(str, self.ON_MESSAGE_SOURCE))}")
         logger.info("-" * 60)
         
-        for source_id, config in self.FORWARD_CONFIG.items():
-            logger.info(f"\n📍 Source ID: {source_id}")
+        for config in self.FORWARD_CONFIG:
+            logger.info(f"\n📍 Source ID: {config['source']}")
             
             # Log destinations
-            destinations = config.get('destinations', [])
-            logger.info(f"  ├─ Destinations: {len(destinations)}")
-            for dest in destinations:
-                logger.info(f"  │  └─ {dest}")
+            destination = config.get('dest', [])
+            logger.info(f"  ├─ Destination: {destination}")
             
             # Log filters
-            filters = config.get('filters', {})
+            filters = config.get('replace', {})
             if filters:
                 logger.info("  ├─ Filters:")
                 for filter_type, filter_value in filters.items():
                     logger.info(f"  │  ├─ {filter_type}: {filter_value}")
             else:
                 logger.info("  ├─ Filters: None")
-            
-            # Log other config options
-            other_keys = [k for k in config.keys() if k not in ['destinations', 'filters']]
-            if other_keys:
-                logger.info("  └─ Other Settings:")
-                for key in other_keys:
-                    logger.info(f"     └─ {key}: {config[key]}")
-        
+
         logger.info("\n" + "=" * 60)
 
 
