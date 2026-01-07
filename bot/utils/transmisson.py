@@ -1,7 +1,7 @@
 import os
 import time
-from contextlib import suppress
 import uuid
+from contextlib import suppress
 
 from pyrogram import Client, types
 
@@ -9,11 +9,17 @@ from bot.config import settings
 from bot.enums import TransferStatus
 from bot.exceptions import CancelledError
 from bot.utils.ffmpeg import get_video_details
-from bot.utils.helpers import (get_destination, get_thumbnail, get_title,
-                               get_upload_function, is_transfer_cancelled,
-                               preserve_username, progress_for_pyrogram,
-                               restore_username)
-from bot.utils.translator import translate_fr_to_en
+from bot.utils.helpers import (
+    get_destination,
+    get_thumbnail,
+    get_title,
+    get_upload_function,
+    is_transfer_cancelled,
+    preserve_username,
+    progress_for_pyrogram,
+    restore_username,
+)
+from bot.utils.translator import translate
 from database import db
 
 
@@ -46,7 +52,7 @@ async def forward_message(
         unique_key = str(uuid.uuid4())
         orginal_text = message.text.html
         text = preserve_username(chat_id, orginal_text, unique_key)
-        text = await translate_fr_to_en(text)
+        text = await translate(text)
         text = restore_username(chat_id, text, unique_key)
         log = await app.send_message(chat_id=get_destination(chat_id), text=text)
     else:
@@ -205,7 +211,7 @@ async def upload_media(
         unique_key = str(uuid.uuid4())
         caption = caption.html
         caption = preserve_username(message.chat.id, caption, unique_key)
-        caption = await translate_fr_to_en(caption)
+        caption = await translate(caption)
         caption = restore_username(message.chat.id, caption, unique_key)
 
     kwargs["caption"] = caption

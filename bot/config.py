@@ -33,17 +33,18 @@ class Config(BaseSettings):
     DATABASE_URL: Optional[str] = None
     OWNER_ID: int
 
+    # OPENAI settings
+    OPENAI_API_KEY: str
+
     # Optional settings
     WEB_SERVER: bool = False
     WEB_URL: Optional[str] = None
     SLEEP_TIME: int = 10
-
-    # Config file path for forward configuration
     CONFIG_FILE: str = Field(
         default="dev_config.yaml", description="Path to YAML config file"
     )
 
-    # Runtime attributes (not from env)
+    # --------------- Runtime attributes (not from env) ------------------
     CLIENTS: Dict[Any, Any] = Field(default_factory=dict, exclude=True)
     TRANSFERS: Dict[Any, Any] = Field(default_factory=dict, exclude=True)
     FORWARD_CONFIG: Dict[int, Dict[str, Any]] = Field(
@@ -60,7 +61,7 @@ class Config(BaseSettings):
             "text": "📄 Text",
         },
         exclude=True,
-    )
+    ) # type: ignore
 
     @field_validator("WEB_SERVER", mode="before")
     @classmethod
@@ -126,7 +127,7 @@ class Config(BaseSettings):
 
 
 # Create a singleton instance
-settings = Config()
+settings = Config() # type: ignore 
 
 
 class ContextVariables(object):
