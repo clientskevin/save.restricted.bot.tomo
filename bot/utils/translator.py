@@ -13,6 +13,7 @@ __version__ = "0.2.0"
 import asyncio
 
 from openai import AsyncOpenAI
+
 from bot.config import settings
 
 client = AsyncOpenAI(api_key=settings.OPENAI_API_KEY)
@@ -30,7 +31,7 @@ async def translate(text: str, target_lang: str = "es") -> str:
     Returns:
         Translated text with preserved formatting
     """
-    prompt = f"""Translate the following text to {target_lang} language word-to-word.
+    prompt = f"""Translate the following text to "{target_lang}" language word-to-word.
 
 IMPORTANT RULES:
 - Do NOT translate HTML tags, keep them exactly as they are
@@ -39,8 +40,11 @@ IMPORTANT RULES:
 - Do NOT add any extra content, explanations, or formatting
 - Return ONLY the translated text, nothing else
 
-Text to translate to {target_lang}:
-{text}"""
+Text to translate to "{target_lang}":
+Input: {text}
+
+Ouput:
+Translate and return only the input text in "{target_lang}" language word-to-word."""
 
     for attempt in range(3):
         try:

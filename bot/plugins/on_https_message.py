@@ -57,14 +57,14 @@ async def on_https_message(bot: Client, message: types.Message, **kwargs):
 
     user_id = message.from_user.id
 
-    for download_id, transfer in settings.TRANSFERS.items():
-        if (
-            transfer["user_id"] == user_id
-            and transfer["status"] == TransferStatus.IN_PROGRESS.value
-        ):
-            return await message.reply_text(
-                "You have a transfer in progress. Please wait for it to complete."
-            )
+    # for download_id, transfer in settings.TRANSFERS.items():
+    #     if (
+    #         transfer["user_id"] == user_id
+    #         and transfer["status"] == TransferStatus.IN_PROGRESS.value
+    #     ):
+    #         return await message.reply_text(
+    #             "You have a transfer in progress. Please wait for it to complete."
+    #         )
 
     app = await get_user_client(user_id)
 
