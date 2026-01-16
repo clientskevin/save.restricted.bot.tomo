@@ -28,4 +28,4 @@ forwards:
     dest: -1003654063319
     lang: es
     replace:
-      "@finstrasupport": "@finstrasoporte"
+      "@finstrasupport": "@finstra_soporte"
