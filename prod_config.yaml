@@ -31,7 +31,7 @@ forwards:
       "@finstrasupport": "@finstra_soporte"
 
   - source: -1002477064021
-    dest: -1003633980825
+    dest: -1003292935094
     lang: ro
     replace:
       "@finstrasupport": "@Asistenta_Finstra"
