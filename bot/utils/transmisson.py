@@ -51,7 +51,7 @@ async def forward_message(
         unique_key = str(uuid.uuid4())
         orginal_text = message.text.html
         text = preserve_username(config, orginal_text, unique_key)
-        text = await translate(text)
+        text = await translate(text, target_lang=config["lang"])
         text = restore_username(text, unique_key)
         log = await app.send_message(chat_id=config["dest"], text=text)
     else:
@@ -210,7 +210,7 @@ async def upload_media(
         unique_key = str(uuid.uuid4())
         caption = caption.html
         caption = preserve_username(config, caption, unique_key)
-        caption = await translate(caption)
+        caption = await translate(caption, target_lang=config["lang"])
         caption = restore_username(caption, unique_key)
 
     kwargs["caption"] = caption
