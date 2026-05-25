@@ -36,3 +36,10 @@ forwards:
     replace:
       "@finstrasupport": "@Asistenta_Finstra"
 
+  - source: -1002477064021
+    dest: -1003775416979
+    lang: en
+    replace:
+      "@finstrasupport": "@Dave_passiveprofits"
+      "@finstra": "PASSIVE PROFITS"
+
