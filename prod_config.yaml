@@ -41,5 +41,5 @@ forwards:
     lang: en
     replace:
       "@finstrasupport": "@Dave_passiveprofits"
-      "@finstra": "PASSIVE PROFITS"
+      "finstra": "PASSIVE PROFITS"
 
