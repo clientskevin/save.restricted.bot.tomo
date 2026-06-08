@@ -20,7 +20,7 @@ forwards:
     dest: -1003490790931
     lang: spanish
     replace:
-      "@finstrasupport": "@goldaiofficialsupport"
+      "@finstrasupport": "@goldautotradingsupport"
       "FINSTRA": "GOLD AI"
       "FINTRA": "GOLD AI"
 
@@ -28,18 +28,18 @@ forwards:
     dest: -1003654063319
     lang: spanish
     replace:
-      "@finstrasupport": "@finstra_soporte"
+      "@finstrasupport": "@goldautotradingsupport"
 
   - source: -1002477064021
     dest: -1003292935094
     lang: romanian
     replace:
-      "@finstrasupport": "@Asistenta_Finstra"
+      "@finstrasupport": "@goldautotradingsupport"
 
   - source: -1002477064021
     dest: -1003775416979
     lang: en
     replace:
-      "@finstrasupport": "@Dave_passiveprofits"
+      "@finstrasupport": "@goldautotradingsupport"
       "finstra": "PASSIVE PROFITS"
 
