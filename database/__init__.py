@@ -1,6 +1,7 @@
 from bot.config import settings
 
 from .config import ConfigDB
+from .source_messages import SourceMessagesDB
 from .transfers import TransfersDB
 from .user_channels import UserChannelDatabase
 from .users import UserDatabase
@@ -14,6 +15,9 @@ class Database:
             settings.DATABASE_URL, settings.DATABASE_NAME
         )
         self.transfers = TransfersDB(settings.DATABASE_URL, settings.DATABASE_NAME)
+        self.source_messages = SourceMessagesDB(
+            settings.DATABASE_URL, settings.DATABASE_NAME
+        )
 
 
 db = Database()
