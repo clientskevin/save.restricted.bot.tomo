@@ -1,8 +1,10 @@
 from datetime import datetime
+from typing import List, Optional
 
 from database.core import Core
 
-MAX_SOURCE_MESSAGES = 1000
+MAX_SOURCE_MESSAGES = 10000
+TEXT_MAX_LEN = 200
 
 
 class SourceMessagesDB(Core):
@@ -33,18 +35,72 @@ class SourceMessagesDB(Core):
             {
                 "$set": {
                     "link": link,
-                    "text": text or "",
+                    "text": (text or "")[:TEXT_MAX_LEN],
                     "updated_at": now,
                 },
                 "$setOnInsert": {
                     "source_id": source_id,
                     "message_id": message_id,
                     "created_at": now,
+                    "forwards": [],
                 },
             },
             upsert=True,
         )
         await self._trim_to_limit()
+
+    async def add_forward(
+        self,
+        source_id: int,
+        message_id: int,
+        dest_id: int,
+        dest_message_id: int,
+    ):
+        """Record a destination copy of a source message."""
+        await self._ensure_indexes()
+        await self.col.update_one(
+            {"source_id": source_id, "message_id": message_id},
+            {
+                "$addToSet": {
+                    "forwards": {
+                        "dest_id": dest_id,
+                        "dest_message_id": dest_message_id,
+                    }
+                },
+                "$set": {"updated_at": datetime.now()},
+                "$setOnInsert": {
+                    "source_id": source_id,
+                    "message_id": message_id,
+                    "link": "",
+                    "text": "",
+                    "created_at": datetime.now(),
+                },
+            },
+            upsert=True,
+        )
+        await self._trim_to_limit()
+
+    async def get_message(
+        self, source_id: int, message_id: int
+    ) -> Optional[dict]:
+        await self._ensure_indexes()
+        return await self.col.find_one(
+            {"source_id": source_id, "message_id": message_id}
+        )
+
+    async def get_messages(
+        self, source_id: int, message_ids: List[int]
+    ) -> List[dict]:
+        await self._ensure_indexes()
+        return await self.col.find(
+            {"source_id": source_id, "message_id": {"$in": message_ids}}
+        ).to_list(length=len(message_ids))
+
+    async def remove_message(self, source_id: int, message_id: int):
+        await self._ensure_indexes()
+        return await self.col.delete_one(
+            {"source_id": source_id, "message_id": message_id}
+        )
 
     async def _trim_to_limit(self):
         count = await self.col.count_documents({})

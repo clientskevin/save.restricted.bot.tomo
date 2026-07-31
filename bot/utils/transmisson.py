@@ -68,6 +68,15 @@ async def forward_message(
             user_id, "Failed to forward the message. Please try again."
         )
 
+    # Map source msg -> dest copy so deletes can be synced
+    with suppress(Exception):
+        await db.source_messages.add_forward(
+            source_id=message.chat.id,
+            message_id=message.id,
+            dest_id=config["dest"],
+            dest_message_id=log.id,
+        )
+
     caption = log.text or log.caption or ""
 
     for channel in valid_channels:

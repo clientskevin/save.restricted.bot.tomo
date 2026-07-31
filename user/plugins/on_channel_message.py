@@ -12,12 +12,14 @@ __version__ = "0.1.0"
 
 import copy
 import logging
+from contextlib import suppress
 
 from pyrogram import Client, filters
 from pyrogram.types import Message
 
 from bot.config import ContextVariables, settings
 from bot.plugins.on_https_message import on_https_message
+from bot.utils.helpers import get_user_client
 from database import db
 
 logger = logging.getLogger(__name__)
@@ -32,6 +34,21 @@ def _build_message_link(message: Message) -> str:
     return f"https://t.me/c/{chat_id}/{message.id}"
 
 
+async def _delete_dest_message(bot: Client, dest_id: int, dest_message_id: int):
+    """Delete a dest copy using bot first, then owner user client."""
+    with suppress(Exception):
+        await bot.delete_messages(dest_id, dest_message_id)
+        return True
+
+    app = await get_user_client(settings.OWNER_ID)
+    if app:
+        with suppress(Exception):
+            await app.delete_messages(dest_id, dest_message_id)
+            return True
+
+    return False
+
+
 @Client.on_message(filters.chat(settings.ON_MESSAGE_SOURCE))
 async def on_channel_message(bot: Client, message: Message):
     """
@@ -42,7 +59,7 @@ async def on_channel_message(bot: Client, message: Message):
     link = _build_message_link(message)
     text = message.text or message.caption or ""
 
-    # Keep last 1000 source msgs (deduped by source + message id)
+    # Keep last 10000 source msgs (deduped by source + message id)
     await db.source_messages.save_message(
         source_id=original_chat.id,
         message_id=message.id,
@@ -65,3 +82,51 @@ async def on_channel_message(bot: Client, message: Message):
         await on_https_message(
             ContextVariables.BOT, user_message, is_batch=False, config=config
         )
+
+
+@Client.on_deleted_messages(filters.chat(settings.ON_MESSAGE_SOURCE))
+async def on_channel_message_deleted(bot: Client, messages: list):
+    """
+    When a source message is deleted, delete matching copies in dest channels.
+    """
+    if not messages:
+        return
+
+    # Deleted updates only carry chat + ids; group by source chat
+    by_chat: dict[int, list[int]] = {}
+    for msg in messages:
+        chat = getattr(msg, "chat", None)
+        if not chat:
+            continue
+        by_chat.setdefault(chat.id, []).append(msg.id)
+
+    bot_client = ContextVariables.BOT or bot
+
+    for source_id, message_ids in by_chat.items():
+        records = await db.source_messages.get_messages(source_id, message_ids)
+        for record in records:
+            forwards = record.get("forwards") or []
+            for fwd in forwards:
+                dest_id = fwd.get("dest_id")
+                dest_message_id = fwd.get("dest_message_id")
+                if dest_id is None or dest_message_id is None:
+                    continue
+                ok = await _delete_dest_message(bot_client, dest_id, dest_message_id)
+                if ok:
+                    logger.info(
+                        "Deleted dest %s/%s for source %s/%s",
+                        dest_id,
+                        dest_message_id,
+                        source_id,
+                        record["message_id"],
+                    )
+                else:
+                    logger.warning(
+                        "Failed to delete dest %s/%s for source %s/%s",
+                        dest_id,
+                        dest_message_id,
+                        source_id,
+                        record["message_id"],
+                    )
+
+            await db.source_messages.remove_message(source_id, record["message_id"])
