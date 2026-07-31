@@ -81,7 +81,7 @@ class Config(BaseSettings):
             yaml_data = yaml.safe_load(f)
 
         self.FORWARD_CONFIG = yaml_data["forwards"]
-        self.ON_MESSAGE_SOURCE = list(x["source"] for x in self.FORWARD_CONFIG)
+        self.ON_MESSAGE_SOURCE = list({x["source"] for x in self.FORWARD_CONFIG})
         return self
 
     def log_forward_config(self, logger) -> None:
